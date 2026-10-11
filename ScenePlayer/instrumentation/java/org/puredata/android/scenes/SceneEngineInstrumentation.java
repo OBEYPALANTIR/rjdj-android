@@ -3,6 +3,7 @@ package org.puredata.android.scenes;
 import android.app.Activity;
 import android.app.Instrumentation;
 import android.content.Context;
+import android.database.Cursor;
 import android.os.Bundle;
 import org.puredata.core.PdBase;
 import org.puredata.core.PdBaseLoader;
@@ -27,15 +28,43 @@ public final class SceneEngineInstrumentation extends Instrumentation {
             require("Atsuke".equals(SceneArchive.readInfo(imported).get("name")), "Android plist import");
             File scene = new File(context.getDir("scenes", 0), work.getName() + ".rj");
             require(imported.renameTo(scene), "publish recovery fixture");
+            File staging = new File(context.getDir("scenes", 0), ".import-" + work.getName());
+            require(staging.mkdir(), "abandoned import fixture");
+            Files.write(new File(staging, "unfinished").toPath(), new byte[] {1});
             SceneDataBase database = new SceneDataBase(context);
-            long id = -1;
+            long id = -1, recordingId = -1;
+            File recording = new File(context.getFilesDir(), "recordings/" + work.getName() + ".wav");
             try {
+                int before = sceneCount(database);
+                database.recoverScenes();
+                int recovered = sceneCount(database);
                 id = database.addScene(scene);
+                require(recovered == before + 1, "startup recovers published user scene before explicit registration");
+                require(!staging.exists(), "abandoned import staging removed");
+                database.recoverScenes();
+                require(sceneCount(database) == before + 1, "recovery is idempotent");
                 require(database.addScene(scene) == id, "interrupted registration recovers without duplicate row");
                 require(new File(scene, "_main.pd").isFile(), "registration preserves scene");
+                File mainPatch = new File(scene, "_main.pd");
+                File savedPatch = new File(work, "saved-main.pd");
+                require(mainPatch.renameTo(savedPatch), "interrupted scene deletion fixture");
+                database.recoverScenes();
+                require(sceneCount(database) == before + 1, "registered partial scene does not block recovery");
+                require(savedPatch.renameTo(mainPatch), "restore registered fixture");
+                require(database.addRecording(recording.getPath(), 0, 0, 0, 0, id) < 0, "missing recording is not registered");
+                Files.createDirectories(recording.getParentFile().toPath());
+                Files.createFile(recording.toPath());
+                require(database.addRecording(recording.getPath(), 0, 0, 0, 0, id) < 0, "empty recording is not registered");
+                require(!recording.exists(), "rejected empty recording is removed");
+                Files.write(recording.toPath(), new byte[] {1, 2});
+                recordingId = database.addRecording(recording.getPath(), 0, 1, 0, 0, id);
+                require(recordingId >= 0, "nonempty recording is registered");
             } finally {
+                if (recordingId >= 0) database.deleteRecording(recordingId);
+                else recording.delete();
                 if (id >= 0) database.deleteScene(id);
                 else SceneArchive.deleteOwnedTree(context.getDir("scenes", 0), scene);
+                SceneArchive.deleteOwnedTree(context.getDir("scenes", 0), staging);
                 database.close();
             }
 
@@ -61,7 +90,7 @@ public final class SceneEngineInstrumentation extends Instrumentation {
             for (int i = 0; i < output.length; i += 2) require(Math.abs(output[i] - output[i + 1]) < 0.00001, "stereo channel parity");
             PdBase.sendFloat("#micvolume", 0);
             require(render(input, output) < 0.000001, "microphone mute bridge");
-            result.putString("stream", "PASS: Android archive parser, SQLite recovery, native stereo DSP, microphone mute\n");
+            result.putString("stream", "PASS: Android archive parser, interrupted-import recovery, staging cleanup, recording file validation, native stereo DSP, microphone mute\n");
             status = Activity.RESULT_OK;
         } catch (Throwable error) {
             result.putString("stream", "FAIL: " + android.util.Log.getStackTraceString(error));
@@ -70,6 +99,10 @@ public final class SceneEngineInstrumentation extends Instrumentation {
             ScenePlayback.delete(work);
         }
         finish(status, result);
+    }
+
+    private int sceneCount(SceneDataBase database) {
+        try (Cursor scenes = database.getAllScenes()) { return scenes.getCount(); }
     }
 
     private double render(float[] input, float[] output) {

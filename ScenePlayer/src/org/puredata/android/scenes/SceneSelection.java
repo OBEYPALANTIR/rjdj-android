@@ -23,6 +23,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -208,6 +209,15 @@ public class SceneSelection extends Activity implements OnItemClickListener, OnI
 
         @Override protected String doInBackground(Void... ignored) {
             boolean seed = uri == null;
+            SceneDataBase recovery = null;
+            try {
+                recovery = new SceneDataBase(context);
+                recovery.recoverScenes();
+            } catch (Exception e) {
+                Log.w(TAG, "Unable to restore every scene; continuing requested import", e);
+            } finally {
+                if (recovery != null) recovery.close();
+            }
             if (seed && context.getSharedPreferences(TAG, MODE_PRIVATE).getBoolean("defaultSeeded", false)) return null;
             File scene = null;
             boolean imported = false;

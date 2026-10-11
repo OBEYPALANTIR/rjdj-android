@@ -39,5 +39,10 @@
 <string name="delete_recording_title">Delete recording</string>
 <string name="delete_recording_message">Delete recording?</string>
 <string name="no_recordings">No recordings</string>
+<string name="recording_not_saved">No recording was saved. This scene may not support recording.</string>
+<string name="microphone_access">Microphone access</string>
+<string name="microphone_settings_message">To play this scene, allow microphone access in Settings. Then return and tap Play.</string>
+<string name="open_settings">Open settings</string>
+<string name="settings_unavailable">Unable to open app settings</string>
 
 </resources>

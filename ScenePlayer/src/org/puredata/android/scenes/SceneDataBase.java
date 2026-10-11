@@ -18,6 +18,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 public class SceneDataBase {
 
@@ -90,12 +91,44 @@ public class SceneDataBase {
 		db.close();
 	}
 
-	public long addScene(File sceneFolder) throws IOException {
+    public void recoverScenes() throws IOException {
+        // Share the importer lock so recovery never removes an extraction in progress.
+        synchronized (SceneArchive.class) {
+            File[] folders = scenesRoot.listFiles();
+            if (folders == null) throw new IOException("Cannot inspect scene storage");
+            IOException failure = null;
+            for (File folder : folders) {
+                try {
+                    if (folder.getName().startsWith(".import-")) {
+                        SceneArchive.deleteOwnedTree(scenesRoot, folder);
+                    } else if (folder.isDirectory() && folder.getName().endsWith(".rj")) {
+                        SceneArchive.requireOwned(scenesRoot, folder);
+                        if (findSceneId(folder) >= 0) continue;
+                        SceneArchive.requireOwned(folder, new File(folder, "_main.pd"));
+                        SceneArchive.requireOwned(folder, new File(folder, "Info.plist"));
+                        if (!new File(folder, "_main.pd").isFile()) throw new IOException("Scene is missing _main.pd");
+                        addScene(folder);
+                    }
+                } catch (IOException e) {
+                    if (failure == null) failure = e;
+                    else failure.addSuppressed(e);
+                }
+            }
+            if (failure != null) throw failure;
+        }
+    }
+
+	private long findSceneId(File sceneFolder) {
 		try (Cursor existing = db.query(TABLE_SCENES, new String[] { SceneColumn.ID.label },
 				SceneColumn.SCENE_DIRECTORY.label + " = ?", new String[] { sceneFolder.getAbsolutePath() },
 				null, null, null)) {
-			if (existing.moveToFirst()) return existing.getLong(0);
+			return existing.moveToFirst() ? existing.getLong(0) : -1;
 		}
+	}
+
+	public long addScene(File sceneFolder) throws IOException {
+		long existing = findSceneId(sceneFolder);
+		if (existing >= 0) return existing;
 		Map<String, String> sceneInfo = SceneArchive.readInfo(sceneFolder);
 		ContentValues values = new ContentValues();
 		for (SceneColumn column : SceneColumn.values()) {
@@ -110,6 +143,13 @@ public class SceneDataBase {
 	}
 	
 	public long addRecording(String path, long time, long duration, double longitude, double latitude, long sceneId) {
+		File recording = new File(path);
+		if (!recording.isFile()) return -1;
+		if (recording.length() == 0) {
+			try { SceneArchive.deleteOwnedTree(recordingsRoot, recording); }
+			catch (IOException e) { Log.w("SceneDataBase", "Unable to remove empty recording", e); }
+			return -1;
+		}
 		ContentValues values = new ContentValues();
 		values.put(RecordingColumn.RECORDING_PATH.label, path);
 		values.put(RecordingColumn.RECORDING_TIMESTAMP.label, time);
