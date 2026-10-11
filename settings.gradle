@@ -1,8 +1,5 @@
-rootProject.name = 'pd-for-android'
+rootProject.name = 'rjdj-android'
 
 includeBuild 'PdCore'
 
-include ':CircleOfFifths'
-include ':PdTest'
 include ':ScenePlayer'
-include ':Voice-O-Rama'

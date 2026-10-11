@@ -1,22 +1,22 @@
 apply plugin: 'com.android.application'
 
-import org.apache.tools.ant.taskdefs.condition.Os
-
 dependencies {
     implementation 'io.github.libpd.android:pd-core:' + rootProject.pdCoreVersion
 }
 
 android {
     compileSdk = rootProject.compileSdk
+    buildToolsVersion '37.0.0'
     ndkVersion = rootProject.ndkVersion
     namespace = 'org.puredata.android.scenes'
 
     defaultConfig {
-        applicationId 'org.puredata.android.scenes'
+        applicationId 'org.rjdj.revival'
         minSdk rootProject.minSdk
-        targetSdkVersion 33
-        versionCode 11
-        versionName '0.9.2'
+        targetSdkVersion 37
+        versionCode 12
+        versionName '0.10.0'
+        testInstrumentationRunner 'org.puredata.android.scenes.SceneEngineInstrumentation'
     }
 
     sourceSets {
@@ -25,7 +25,6 @@ android {
             java.srcDirs = ['src']
             resources.srcDirs = ['src']
             aidl.srcDirs = ['src']
-            renderscript.srcDirs = ['src']
             res.srcDirs = ['res']
             assets.srcDirs = ['assets']
         }
@@ -38,10 +37,8 @@ android {
         // by a similar customization.
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
-    }
-
-    lintOptions {
-        ignore 'ExpiredTargetSdkVersion'
+        test.java.srcDirs = ['test']
+        androidTest.setRoot('instrumentation')
     }
 
     packagingOptions {
@@ -61,7 +58,8 @@ android {
     defaultConfig {
         externalNativeBuild {
             ndkBuild {
-                arguments 'NDK_DEBUG=1', '-j' + Runtime.runtime.availableProcessors()
+                // NDK make's output synchronization crashes on macOS 27.
+                arguments '-j' + gradle.startParameter.maxWorkerCount, '--output-sync=none'
             }
         }
     }
@@ -72,4 +70,10 @@ android {
         }
     }
 }
+
+tasks.register('checkSceneFiles', Exec) {
+    commandLine 'sh', 'test/check-scenes.sh'
+}
+
+tasks.named('check').configure { dependsOn 'checkSceneFiles' }
 

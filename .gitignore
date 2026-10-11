@@ -1,5 +1,8 @@
 SX files
 .DS_Store
+.agents/
+.omo/
+.token-optimizer/
 
 # Ignore gradle files
 .gradle

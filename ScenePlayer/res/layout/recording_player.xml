@@ -1,92 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="fill_parent"
-	android:layout_height="fill_parent">
-	<LinearLayout android:id="@+id/recording_play_header"
-		android:orientation="vertical" android:layout_width="fill_parent"
-		android:layout_height="wrap_content" android:padding="0px"
-		android:layout_alignParentTop="true" android:background="@drawable/white_gradient_top">
-		<TextView android:id="@+id/recording_play_title"
-			android:layout_width="fill_parent" android:layout_height="wrap_content"
-			android:textColor="#000" android:gravity="center"
-			android:layout_weight="2" android:textSize="24sp" android:ellipsize="end"
-			android:singleLine="true" />
-		<TextView android:id="@+id/recording_play_artist"
-			android:layout_width="fill_parent" android:layout_height="wrap_content"
-			android:textColor="#555" android:gravity="center"
-			android:layout_weight="1" android:textSize="18sp"
-			android:paddingBottom="5px" android:ellipsize="end"
-			android:singleLine="true" />
-	</LinearLayout>
-	<LinearLayout android:id="@+id/recording_play_footer"
-		android:layout_width="fill_parent" android:layout_height="wrap_content"
-		android:gravity="center" android:background="@drawable/white_gradient_bottom"
-		android:layout_alignParentBottom="true">
-		<ToggleButton android:id="@+id/recording_play_play_button"
-			android:layout_width="wrap_content" android:layout_height="wrap_content"
-			android:layout_weight="1" android:checked="true" android:drawableTop="@drawable/play_button"
-			android:lines="0" android:background="@drawable/all_transparent" />
-		<ImageButton android:id="@+id/recording_play_scene_button"
-			android:layout_width="wrap_content" android:layout_height="wrap_content"
-			android:layout_weight="1" android:src="@drawable/transport_goto_scene"
-			android:background="@drawable/all_transparent" />
-		<ImageButton android:id="@+id/recording_play_rename_button"
-			android:layout_width="wrap_content" android:layout_height="wrap_content"
-			android:layout_weight="1" android:src="@drawable/transport_edit_description"
-			android:background="@drawable/all_transparent" />
-	</LinearLayout>
-	<SeekBar android:id="@+id/recording_play_seekbar" android:layout_above="@id/recording_play_footer"
-		android:layout_width="fill_parent" android:layout_height="wrap_content" android:padding="12dip" />
-	<ImageView android:id="@+id/recording_play_image" android:layout_width="fill_parent"
-        android:layout_height="fill_parent" android:layout_above="@id/recording_play_seekbar"
-		android:layout_below="@id/recording_play_header" android:scaleType="fitCenter"/>
-	<TableLayout android:layout_width="fill_parent" android:layout_height="fill_parent"
-        android:layout_below="@id/recording_play_header" android:layout_above="@id/recording_play_seekbar"
-        android:background="@drawable/popup_custom" android:layout_marginTop="30dip" android:layout_marginBottom="24dip"
-        android:layout_marginLeft="6dip" android:layout_marginRight="6dip">
-		<TableRow>
-			<TextView android:layout_width="wrap_content"
-				android:layout_height="wrap_content" android:textColor="#FFF"
-				android:textSize="22sp" android:text="@string/date" />
-			<TextView android:id="@+id/recording_play_date_text"
-				android:layout_width="wrap_content" android:layout_height="wrap_content"
-				android:layout_marginLeft="7px" android:textColor="#FFF"
-				android:textSize="18sp" />
-		</TableRow>
-		<TableRow>
-			<TextView android:layout_width="wrap_content"
-				android:layout_height="wrap_content" android:textColor="#FFF"
-				android:textSize="22sp" android:text="@string/duration" />
-			<TextView android:id="@+id/recording_play_duration_text"
-				android:layout_width="wrap_content" android:layout_height="wrap_content"
-				android:layout_marginLeft="7px" android:textColor="#FFF"
-				android:textSize="18sp" />
-		</TableRow>
-		<TableRow>
-			<TextView android:layout_width="wrap_content"
-				android:layout_height="wrap_content" android:textColor="#FFF"
-				android:textSize="22sp" android:text="@string/latitude" />
-			<TextView android:id="@+id/recording_play_latitude_text"
-				android:layout_width="wrap_content" android:layout_height="wrap_content"
-				android:layout_marginLeft="7px" android:textColor="#FFF"
-				android:textSize="18sp" />
-		</TableRow>
-		<TableRow>
-			<TextView android:layout_width="wrap_content"
-				android:layout_height="wrap_content" android:textColor="#FFF"
-				android:textSize="22sp" android:text="@string/longitude" />
-			<TextView android:id="@+id/recording_play_longitude_text"
-				android:layout_width="wrap_content" android:layout_height="wrap_content"
-				android:layout_marginLeft="7px" android:textColor="#FFF"
-				android:textSize="18sp" />
-		</TableRow>
-		<TableRow>
-			<TextView android:layout_width="wrap_content"
-				android:layout_height="wrap_content" android:text="@string/description"
-				android:textColor="#FFF" android:textSize="22sp" />
-			<TextView android:id="@+id/recording_play_description_text"
-				android:layout_width="wrap_content" android:layout_height="wrap_content"
-				android:textColor="#FFF" android:textSize="18sp" />
-		</TableRow>
-	</TableLayout>
-</RelativeLayout>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="16dp" android:background="#FAF9F6">
+    <TextView android:id="@+id/recording_play_title" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:textSize="24sp" android:textStyle="bold"
+        android:textColor="#201E25" android:maxLines="2" android:ellipsize="end" />
+    <TextView android:id="@+id/recording_play_artist" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:textSize="16sp" android:textColor="#605D67" />
+    <ImageView android:id="@+id/recording_play_image" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1" android:scaleType="fitCenter"
+        android:layout_marginVertical="12dp" android:importantForAccessibility="no" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/date" android:textColor="#605D67" />
+    <TextView android:id="@+id/recording_play_date_text" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:textSize="16sp" android:textColor="#201E25" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/duration" android:textColor="#605D67" />
+    <TextView android:id="@+id/recording_play_duration_text" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:textSize="16sp" android:textColor="#201E25" />
+    <TextView android:id="@+id/recording_play_description_text" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:textSize="16sp" android:textColor="#201E25"
+        android:maxLines="3" android:ellipsize="end" android:layout_marginTop="8dp" />
+    <SeekBar android:id="@+id/recording_play_seekbar" android:layout_width="match_parent"
+        android:layout_height="48dp" android:contentDescription="@string/recording_position" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center" android:orientation="horizontal">
+        <ToggleButton android:id="@+id/recording_play_play_button" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1" android:minHeight="48dp"
+            android:checked="false" android:textOn="@string/pause_action" android:textOff="@string/paused" />
+        <ImageButton android:id="@+id/recording_play_scene_button" android:layout_width="56dp"
+            android:layout_height="56dp" android:src="@drawable/transport_goto_scene"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/open_scene" />
+        <ImageButton android:id="@+id/recording_play_rename_button" android:layout_width="56dp"
+            android:layout_height="56dp" android:src="@drawable/transport_edit_description"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/rename_recording" />
+    </LinearLayout>
+</LinearLayout>

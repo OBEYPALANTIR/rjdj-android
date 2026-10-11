@@ -1,22 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="app_name">ScenePlayer</string>
+  <string name="app_name">RjDj Revival</string>
   <string name="playing">Playing</string>
   <string name="paused">Play</string>
   <string name="startrec">Record</string>
   <string name="stoprec">Recording</string>
-  <string name="update_label">Install scene from SD card</string>
-  <string name="download_label">Download scene from the web</string>
-  <string name="download_url">http://shop.oreilly.com/product/0636920022503.do</string>
+  <string name="update_label">Import a scene</string>
   <string name="selection_about_title">About</string>
-  <string name="selection_about_msg">ScenePlayer\nCopyright 2010 Peter Brinkmann\n(peter.brinkmann@gmail.com)\nhttp://nettoyeur.noisepages.com/</string>
+  <string name="selection_about_msg">RjDj Revival\nAn independent Android revival built on ScenePlayer and libpd.\nScenePlayer copyright 2010 Peter Brinkmann.\nScene artwork, patches and music retain their authors\' licenses.</string>
   <string name="selection_help_title">Help</string>
-  <string name="selection_help_msg">ScenePlayer is a partial Android port of the awesome RjDj app (http://rjdj.me/).
- If you want to install more scenes, search the web for RjDj scenes (Martin Brinkmann, Chris McCormick, and Berenger Recoules are among the artists who
- have made some of their scenes available for free) and copy them to your SD card.  Then you can add them to your list of scenes.
- 
- WARNING: Apps cannot access the SD card while it is mounted as external storage on your computer.  Make sure to disconnect your Android device from your
- computer before adding scenes.</string>
+  <string name="selection_help_msg">Put on headphones, open a scene and tap Play. Allow microphone access to turn nearby sounds into music. Touch the scene or move your phone to interact.\n\nImport a .rj, .rjz or .zip archive containing a scene folder with _main.pd and Info.plist. Scenes that require unsupported Pure Data externals may not play correctly.\n\nRecord saves the scene output privately on this device. Open the Recordings tab to listen. Playback continues with the screen off; Pause or Back stops the microphone.</string>
 
   <string name="location">Location</string>
   <string name="cant_read_folder">Unable to read folder</string>
@@ -27,13 +20,18 @@
   <string name="delete_recording_fail">Unable to delete recording</string>
 <string name="date_format">yyyy-MM-dd hh:mm</string>
 <string name="duration_format">mm:ss</string>
-<string name="recording_folder">/sdcard/pd</string>
 <string name="date">Date</string>
 <string name="duration">Duration</string>
 <string name="description">Description</string>
 <string name="edit_description">Edit description:</string>
-<string name="longitude">Longitude</string>
-<string name="latitude">Latitude</string>
+<string name="pause_action">Pause</string>
+<string name="scene_info">Scene information</string>
+<string name="scene_surface">Interactive scene. Touch or move your phone while playing.</string>
+<string name="mic_level">Microphone level</string>
+<string name="headphones_hint">Headphones on. Tap Play to hear your surroundings transformed.</string>
+<string name="open_scene">Open original scene</string>
+<string name="rename_recording">Rename recording</string>
+<string name="recording_position">Recording position</string>
 <string name="open_recording_fail">Unable to open audio file</string>
 <string name="no_such_recording">No such recording</string>
 <string name="delete_scene_title">Delete scene</string>

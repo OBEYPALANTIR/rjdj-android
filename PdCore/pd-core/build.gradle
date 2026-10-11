@@ -71,7 +71,8 @@ android {
     defaultConfig {
         externalNativeBuild {
             ndkBuild {
-                arguments 'NDK_DEBUG=1', '-j' + Runtime.runtime.availableProcessors()
+                // NDK make's output synchronization crashes on macOS 27.
+                arguments '-j' + gradle.startParameter.maxWorkerCount, '--output-sync=none'
                 cFlags '-DANDROID_ARM_NEON=TRUE', '-DANDROID_TOOLCHAIN=clang'
             }
         }

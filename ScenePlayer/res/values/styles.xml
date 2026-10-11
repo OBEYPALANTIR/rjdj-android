@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style parent="@android:style/Theme.NoTitleBar.Fullscreen" name="FullScreen.DisableSoundEffects">
+    <style parent="@android:style/Theme.Material.Light.NoActionBar" name="FullScreen.DisableSoundEffects">
         <item name="android:soundEffectsEnabled">false</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#5C3FBF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
     </style>
 </resources>

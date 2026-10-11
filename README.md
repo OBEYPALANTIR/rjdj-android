@@ -1,93 +1,47 @@
-![Snapshots](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fcentral.sonatype.com%2Frepository%2Fmaven-snapshots%2Fio%2Fgithub%2Flibpd%2Fandroid%2Fpd-core%2Fmaven-metadata.xml&style=flat-square&label=maven%20snapshots&color=%2315252D&strategy=latestProperty)
-[ ![Download](https://maven-badges.sml.io/maven-central/io.github.libpd.android/pd-core/badge.svg)](https://maven-badges.sml.io/maven-central/io.github.libpd.android/pd-core)
-![Build](https://github.com/libpd/pd-for-android/workflows/Android%20CI/badge.svg)
+# RjDj Revival for Android
 
-[![Join the chat at https://gitter.im/libpd/pd-for-android](http://img.shields.io/badge/chat-online-brightgreen.svg)](https://gitter.im/libpd/pd-for-android)
- \- Try the chat for problems with setting up the library to work with your app
+An independent revival of reactive music scenes for Android 17 (API 37), built from the public ScenePlayer and libpd sources. This is a reconstruction of the scene host, not the original proprietary RjDj application or its discontinued online catalog.
 
-[![StackOverflow](http://img.shields.io/badge/stackoverflow-libpd-blue.svg)]( http://stackoverflow.com/questions/tagged/libpd )
- \- For questions regarding libpd
+## Use
 
-## How to use the library
+Open a scene, put on headphones and tap **Play**. Grant microphone permission, then tap Play again. Touch the artwork or move the phone to interact with patches that support those inputs. Microphone level controls the live input.
 
-Make sure you have Maven Central in your repositories:
+**Record** saves stereo scene output in the app's private storage. Listen and rename it in the **Recordings** tab. Playback continues in a microphone/media foreground service when the screen turns off. Pause, Back, audio focus loss or headphone disconnection stops capture. Notification permission enables the return-to-scene notification.
 
-```gradle
-allprojects {
-    repositories {
-        mavenCentral()
-        // ... other repositories
-    }
-}
-```
+The players keep their live audio and recording state during rotation and window resizing. Their flexible views remeasure in place; there are no alternate orientation layouts to reload. Other configuration changes can still recreate an activity.
 
-Add the dependency to your app:
+**Import a scene** opens Android's document picker. Choose a ZIP-format `.rj`, `.rjz` or `.zip` containing exactly one `.rj` folder with `_main.pd` and `Info.plist`. Scene files remain intact; playback uses a temporary copy with Android host bridges. Imports are limited to 4,096 entries, 64 MiB per file and 256 MiB total. Duplicate folder names are rejected without overwriting scenes.
 
-```gradle
-dependencies {
-    implementation 'io.github.libpd.android:pd-core:1.2.1-rc6'
-    
-    // ... other dependencies
-}
-```
+There is no network permission, account, scene marketplace or location capture. Recordings and imported scenes are local app data; Android backup may include them.
 
-To use a snapshot instead:
+## Build and check
 
-```gradle
-allprojects {
-    repositories {
-        maven {
-            url 'https://central.sonatype.com/repository/maven-snapshots/'
-        }
-    }
-}
-```
+Use a checkout path without spaces because the native build uses ndk-build. Requirements: JDK 21, Android SDK platform 37.0, Build Tools 37.0.0 and NDK 29.0.14206865. Gradle 9.6.1 is supplied by the wrapper; AGP 9.1.1 supports API 37. Minimum install API is 28; primary acceptance is Android 17.
 
-```gradle
-dependencies {
-    implementation 'io.github.libpd.android:pd-core:1.4.2-SNAPSHOT'
-}
-```
-
-Please note that pd-for-android depends on the vanilla version of Pure Data. Currently this is Pure Data vanilla version 0.51-3. You can get desktop distributions of it here:
-http://msp.ucsd.edu/software.html
-
-If you're building the patch for your app using the extended distribution of Pure Data, or any other distribution that is not vanilla, you should be careful not to use PD objects that are not part of the vanilla distribution, because these will not work with libpd out of the box. It is however possible to add PD externals to your pd-for-android app. For a simple example as to how this could be done see the PdTest app in this repository, specifically [the jni folder](https://github.com/libpd/pd-for-android/tree/master/PdTest/jni) and the [build.gradle](https://github.com/libpd/pd-for-android/tree/master/PdTest/build.gradle) file. If you take this path, you'll need to clone this repository and use it as the base folder for your app, similar to the way described in the following section on creating an .aar file.
-
-## How to create an .aar file of pd-for-android
-
-### Using the terminal
-
-1. Clone this repository
-2. Go to the repository folder:
-```
-cd pd-for-android
-```
-3. Initialize and udpate the git submodules:
-```
-git submodule sync --recursive
+```sh
 git submodule update --init --recursive
-```
-4. Install dependencies and assemble the release: (Note: Windows users should run `gradlew`)
-```
-./gradlew androidDependencies
-./gradlew clean assembleRelease
+sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;29.0.14206865'
+./gradlew :ScenePlayer:checkSceneFiles :ScenePlayer:assembleDebug :ScenePlayer:assembleDebugAndroidTest :ScenePlayer:lintDebug --max-workers=2
+adb -s YOUR_SERIAL install -r ScenePlayer/build/outputs/apk/debug/ScenePlayer-debug.apk
 ```
 
-Now you have your PdCore .aar file in the folder PdCore/build/outputs/aar
+Set `JAVA_HOME` and `ANDROID_HOME` to your installed JDK and SDK. The package is `org.rjdj.revival`. The debug APK uses a development signing key and is not a store release.
 
-### Using Android Studio
+The standalone file checks cover archive traversal, entity declarations, expansion limits, collisions and playback-copy preservation. The instrumentation check exercises the Android parser, SQLite registration recovery and deterministic buffers through packaged native libpd:
 
-1. Install Android Studio
-1. Make sure the Android SDK and NDK tools are installed and that Android Studio is properly configured to use them
-1. Clone and initialize this repository as per steps 1-3 above
-1. Create a new Android Studio project by importing `settings.gradle` from the pd-for-android root folder: `File > New > Import Project...`
-1. Open the Gradle Toolbar and run the task assembleRelease in the project :PdCore
+```sh
+adb -s YOUR_SERIAL install -r ScenePlayer/build/outputs/apk/androidTest/debug/ScenePlayer-debug-androidTest.apk
+adb -s YOUR_SERIAL shell am instrument -w org.rjdj.revival.test/org.puredata.android.scenes.SceneEngineInstrumentation
+```
 
-## How to update PdCore module to use latest libpd version
+A successful instrumentation run prints `PASS` and exits with `INSTRUMENTATION_CODE: -1`. It uses the plain JNI rendering entry point; real microphone, foreground-service, notification and recording flows require separate on-device verification. Physical audio latency, Bluetooth routing and sensor calibration require a phone and headphones.
 
-1. From the project root folder, step into the libpd submodule folder: `cd PdCore/src/main/jni/libpd`
-1. Update the libpd submodule to the latest commit by running: `git fetch && git checkout origin/master`
-1. Step back to the project root folder and run `git submodule update --init --recursive`
-1. Test that the PdTest app builds and runs correctly. This can be done by importing the project in Android Studio and running a clean build ('Build' > 'Rebuild Project', run PdTest).
+## Provenance and compatibility
+
+- Host: [libpd/pd-for-android ScenePlayer](https://github.com/libpd/pd-for-android/tree/d3ec6c97fcbe881f4fa0cc787dd938e45e31262e/ScenePlayer), copyright Peter Brinkmann and contributors. See [ScenePlayer/LICENSE.txt](ScenePlayer/LICENSE.txt).
+- Native engine: pinned libpd, Pure Data and opensl_stream submodules. Their own license files remain in place.
+- The bundled Atsuke scene, its artwork and rj abstractions retain the licenses inside `ScenePlayer/res/raw/atsuke.zip`, including GPLv3 notices. The host's BSD license does not replace scene licenses.
+- [rjdj/rjlib](https://github.com/rjdj/rjlib/tree/e74c696afebe672c5bfed543cdd77e2d53865db6) documents the historical scene format. Its default GPL license has per-file exceptions.
+
+The host implements microphone/stereo audio, transport and recording messages, 320-unit touch coordinates, acceleration messages, and image/text overlays. Compatibility depends on the objects used by each patch; missing third-party externals are not emulated. The original app binary was unavailable for direct behavioral comparison.
 

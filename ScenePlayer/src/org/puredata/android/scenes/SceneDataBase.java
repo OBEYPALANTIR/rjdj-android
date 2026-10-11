@@ -11,16 +11,7 @@ package org.puredata.android.scenes;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -85,8 +76,12 @@ public class SceneDataBase {
 	}
 
 	private final SQLiteDatabase db;
+	private final File scenesRoot;
+	private final File recordingsRoot;
 
 	public SceneDataBase(Context context) {
+		scenesRoot = context.getDir("scenes", Context.MODE_PRIVATE);
+		recordingsRoot = new File(context.getFilesDir(), "recordings");
 		SceneDataBaseHelper helper = new SceneDataBaseHelper(context);
 		db = helper.getWritableDatabase();
 	}
@@ -96,19 +91,22 @@ public class SceneDataBase {
 	}
 
 	public long addScene(File sceneFolder) throws IOException {
-		Map<String, String> sceneInfo;
-		try {
-			sceneInfo = readInfo(sceneFolder);
-		} catch (Exception e) {
-			throw new IOException(e.getMessage());
+		try (Cursor existing = db.query(TABLE_SCENES, new String[] { SceneColumn.ID.label },
+				SceneColumn.SCENE_DIRECTORY.label + " = ?", new String[] { sceneFolder.getAbsolutePath() },
+				null, null, null)) {
+			if (existing.moveToFirst()) return existing.getLong(0);
 		}
+		Map<String, String> sceneInfo = SceneArchive.readInfo(sceneFolder);
 		ContentValues values = new ContentValues();
 		for (SceneColumn column : SceneColumn.values()) {
 			String name = column.label;
-			values.put(name, sceneInfo.get(name));
+			if (column != SceneColumn.ID && column != SceneColumn.SCENE_DIRECTORY)
+				values.put(name, sceneInfo.get(name));
 		}
 		values.put(SceneColumn.SCENE_DIRECTORY.label, sceneFolder.getAbsolutePath());
-		return db.insert(TABLE_SCENES, null, values);
+		long id = db.insert(TABLE_SCENES, null, values);
+		if (id < 0) throw new IOException("Cannot save scene in library");
+		return id;
 	}
 	
 	public long addRecording(String path, long time, long duration, double longitude, double latitude, long sceneId) {
@@ -123,24 +121,27 @@ public class SceneDataBase {
 	}
 
 	public void deleteScene(long id) throws IOException {
-		Cursor cursor = getScene(id);
-		String path = getString(cursor, SceneColumn.SCENE_DIRECTORY);
-		cursor.close();
-		if (new File(path).exists()) {
-			Runtime.getRuntime().exec("rm -r " + path);
-		}
-		db.delete(TABLE_SCENES, sceneIdClause(id), null);
-	}
-	
-	public void deleteRecording(long id) throws IOException {
-		Cursor cursor = getRecording(id);
-		String path = getString(cursor, RecordingColumn.RECORDING_PATH);
-		cursor.close();
-		if (new File(path).exists()) {
-			Runtime.getRuntime().exec("rm " + path);
-		}
-		db.delete(TABLE_RECORDINGS, recordingIdClause(id), null);
-	}
+        Cursor cursor = getScene(id);
+        String path;
+        try { path = getString(cursor, SceneColumn.SCENE_DIRECTORY); }
+        finally { if (cursor != null) cursor.close(); }
+        if (path == null) throw new IOException("Scene no longer exists");
+        SceneArchive.deleteOwnedTree(scenesRoot, new File(path));
+        db.delete(TABLE_SCENES, sceneIdClause(id), null);
+        // Recordings retain their own files and rows when their scene is removed.
+    }
+
+    public void deleteRecording(long id) throws IOException {
+        Cursor cursor = getRecording(id);
+        String path;
+        try { path = getString(cursor, RecordingColumn.RECORDING_PATH); }
+        finally { if (cursor != null) cursor.close(); }
+        if (path == null) throw new IOException("Recording no longer exists");
+        File recording = new File(path);
+        if (recording.isDirectory()) throw new IOException("Recording path is not a file");
+        SceneArchive.deleteOwnedTree(recordingsRoot, recording);
+        db.delete(TABLE_RECORDINGS, recordingIdClause(id), null);
+    }
 
 	public Cursor getAllScenes() {
 		return db.query(TABLE_SCENES, null, null, null, null, null, SceneColumn.SCENE_TITLE.label);
@@ -152,7 +153,7 @@ public class SceneDataBase {
 	
 	public Cursor getScene(long id) {
 		Cursor cursor = db.query(TABLE_SCENES, null, sceneIdClause(id), null, null, null, null);
-		cursor.moveToFirst();
+		if (cursor != null) cursor.moveToFirst();
 		return cursor;
 	}
 	
@@ -162,7 +163,7 @@ public class SceneDataBase {
 
 	public Cursor getRecording(long id) {
 		Cursor cursor = db.query(TABLE_RECORDINGS, null, recordingIdClause(id), null, null, null, null);
-		cursor.moveToFirst();
+		if (cursor != null) cursor.moveToFirst();
 		return cursor;
 	}
 	
@@ -181,11 +182,9 @@ public class SceneDataBase {
 	}
 	
 	public static String getString(Cursor cursor, String column) {
-		int column_index = cursor.getColumnIndex(column);
-		if (column_index < 0) {
-			column_index = 0;
-		}
-		return cursor.getString(column_index);
+        if (cursor == null || cursor.isClosed() || cursor.isBeforeFirst() || cursor.isAfterLast()) return null;
+        int index = cursor.getColumnIndex(column);
+        return index < 0 ? null : cursor.getString(index);
 	}
 	
 	public static long getLong(Cursor cursor, Column column) {
@@ -193,11 +192,9 @@ public class SceneDataBase {
 	}
 
 	public static long getLong(Cursor cursor, String column) {
-		int column_index = cursor.getColumnIndex(column);
-		if (column_index < 0) {
-			column_index = 0;
-		}
-		return cursor.getLong(column_index);
+        if (cursor == null || cursor.isClosed() || cursor.isBeforeFirst() || cursor.isAfterLast()) return 0;
+        int index = cursor.getColumnIndex(column);
+        return index < 0 ? 0 : cursor.getLong(index);
 	}
 
 	public static double getDouble(Cursor cursor, Column column) {
@@ -205,11 +202,9 @@ public class SceneDataBase {
 	}
 	
 	public static double getDouble(Cursor cursor, String column) {
-		int column_index = cursor.getColumnIndex(column);
-		if (column_index < 0) {
-			column_index = 0;
-		}
-		return cursor.getDouble(column_index);
+        if (cursor == null || cursor.isClosed() || cursor.isBeforeFirst() || cursor.isAfterLast()) return 0;
+        int index = cursor.getColumnIndex(column);
+        return index < 0 ? 0 : cursor.getDouble(index);
 	}
 
 	private static class SceneDataBaseHelper extends SQLiteOpenHelper {
@@ -244,53 +239,8 @@ public class SceneDataBase {
 
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			if (newVersion != oldVersion) {
-				db.execSQL("drop table if exists " + TABLE_SCENES + ";");
-				db.execSQL("drop table if exists " + TABLE_RECORDINGS + ";");
-				onCreate(db);
-			}
+			throw new IllegalStateException("Unsupported scene database upgrade; existing data preserved");
 		}
 	}
 
-	private Map<String, String> readInfo(File sceneFolder)
-			throws ParserConfigurationException, SAXException, IOException {
-		final Map<String, String> values = new HashMap<String, String>();
-		SAXParserFactory spf = SAXParserFactory.newInstance();
-		SAXParser sp = spf.newSAXParser();
-		sp.parse(new File(sceneFolder, "Info.plist"), new DefaultHandler() {
-			private String key = "", val = "";
-			private boolean expectKey;
-
-			@Override
-			public void startElement(String uri, String localName,
-					String qName, Attributes attributes) throws SAXException {
-				expectKey = localName.equalsIgnoreCase("key");
-				if (expectKey) {
-					key = val = "";
-				}
-			}
-
-			@Override
-			public void characters(char[] ch, int start, int length)
-					throws SAXException {
-				String s = new String(ch, start, length);
-				if (expectKey) {
-					key += s;
-				} else {
-					val += s;
-				}
-			}
-
-			@Override
-			public void endElement(String uri, String localName, String qName)
-					throws SAXException {
-				key = key.trim();
-				val = val.trim();
-				if (key.length() > 0) {
-					values.put(key, val);
-				}
-			}
-		});
-		return values;
-	}
 }
