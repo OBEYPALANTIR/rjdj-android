@@ -27,6 +27,12 @@ public class SceneView extends ImageView {
 
 	private final List<Overlay> overlays = new ArrayList<Overlay>();
 
+	@Override
+	public boolean performClick() {
+		super.performClick();
+		return true;
+	}
+
 	public synchronized void addOverlay(Overlay overlay) {
 		overlay.setContainer(this);
 		overlays.add(overlay);

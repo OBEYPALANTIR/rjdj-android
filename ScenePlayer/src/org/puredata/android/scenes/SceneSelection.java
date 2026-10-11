@@ -210,22 +210,25 @@ public class SceneSelection extends Activity implements OnItemClickListener, OnI
             boolean seed = uri == null;
             if (seed && context.getSharedPreferences(TAG, MODE_PRIVATE).getBoolean("defaultSeeded", false)) return null;
             File scene = null;
+            boolean imported = false;
             File root = context.getDir("scenes", MODE_PRIVATE);
             try (InputStream in = seed ? context.getResources().openRawResource(R.raw.atsuke)
                     : context.getContentResolver().openInputStream(uri)) {
-                // Existing installations already contain the sample; never overwrite it.
-                if (seed && new File(root, "Atsuke.rj").exists()) {
-                    context.getSharedPreferences(TAG, MODE_PRIVATE).edit().putBoolean("defaultSeeded", true).apply();
-                    return null;
+                File sample = new File(root, "Atsuke.rj");
+                if (seed && sample.isDirectory()) {
+                    // Recover a process death between archive publication and database insertion.
+                    scene = sample;
+                } else {
+                    scene = SceneArchive.importScene(in, root);
+                    imported = true;
                 }
-                scene = SceneArchive.importScene(in, root);
                 SceneDataBase database = new SceneDataBase(context);
                 try { database.addScene(scene); }
                 finally { database.close(); }
                 if (seed) context.getSharedPreferences(TAG, MODE_PRIVATE).edit().putBoolean("defaultSeeded", true).apply();
                 return seed ? null : "Scene imported";
             } catch (Exception e) {
-                if (scene != null) {
+                if (imported && scene != null) {
                     try { SceneArchive.deleteOwnedTree(root, scene); }
                     catch (IOException cleanup) { return "Import failed; private staging cleanup failed: " + cleanup.getMessage(); }
                 }

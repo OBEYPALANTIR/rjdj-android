@@ -91,6 +91,11 @@ public class SceneDataBase {
 	}
 
 	public long addScene(File sceneFolder) throws IOException {
+		try (Cursor existing = db.query(TABLE_SCENES, new String[] { SceneColumn.ID.label },
+				SceneColumn.SCENE_DIRECTORY.label + " = ?", new String[] { sceneFolder.getAbsolutePath() },
+				null, null, null)) {
+			if (existing.moveToFirst()) return existing.getLong(0);
+		}
 		Map<String, String> sceneInfo = SceneArchive.readInfo(sceneFolder);
 		ContentValues values = new ContentValues();
 		for (SceneColumn column : SceneColumn.values()) {

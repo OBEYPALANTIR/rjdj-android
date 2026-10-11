@@ -18,7 +18,6 @@ import org.puredata.core.utils.IoUtils;
 import android.app.TabActivity;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TabHost;
@@ -43,6 +42,7 @@ public class SceneTabs extends TabActivity {
 		spec = tabHost.newTabSpec(RECORDINGS_TAG).setIndicator("Recordings", res.getDrawable(R.drawable.tab_recordings_selector)).setContent(intent);
 		tabHost.addTab(spec);
 		tabHost.setCurrentTab(0);
+		SceneWindow.fitSystemBars(this);
 	}
 	
 	private void unpackResources() {
@@ -56,16 +56,4 @@ public class SceneTabs extends TabActivity {
 		PdBase.addToSearchPath(libDir.getAbsolutePath());
 	}
 
-	@Override
-	protected void onStart() {
-		super.onStart();
-		Uri uri = getIntent().getData();
-		if (uri != null) {
-			getIntent().setData(null);
-			Intent intent = new Intent().setClass(this, SceneSelection.class);
-			intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-			intent.setData(uri);
-			getLocalActivityManager().startActivity(SCENES_TAG, intent);
-		}
-	}
 }

@@ -270,7 +270,11 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
                 .setOnAudioFocusChangeListener(change -> {
                     if (change != AudioManager.AUDIOFOCUS_GAIN) stopAudio();
                 }, main).build();
-        registerReceiver(noisy, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY), RECEIVER_NOT_EXPORTED);
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(noisy, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY), RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(noisy, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
+        }
     }
 
 	@Override
@@ -293,8 +297,10 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
-		if (v == sceneView && event.getActionMasked() == MotionEvent.ACTION_UP) v.performClick();
-        return (v == sceneView) && VersionedTouch.evaluateTouch(event, sceneView.getWidth(), sceneView.getHeight());
+		if (v == sceneView && event.getActionMasked() == MotionEvent.ACTION_UP) {
+			v.performClick();
+		}
+		return (v == sceneView) && VersionedTouch.evaluateTouch(event, sceneView.getWidth(), sceneView.getHeight());
 	}
 
 	@Override
@@ -304,7 +310,7 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
             wantsPlayback = false;
             if (play != null) play.setChecked(false);
         }
-		getPreferences(MODE_PRIVATE).edit().putInt(MICVOLUME, micValue).commit();
+		getPreferences(MODE_PRIVATE).edit().putInt(MICVOLUME, micValue).apply();
 		dismissProgressDialog();
 		super.onPause();
 	}
@@ -418,6 +424,14 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 
     private void startAudio() {
         if (destroyed || !resumed || playbackFolder == null) { play.setChecked(false); return; }
+        if (android.os.Build.VERSION.SDK_INT >= 33
+                && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                && !getPreferences(MODE_PRIVATE).getBoolean("notificationRequested", false)) {
+            getPreferences(MODE_PRIVATE).edit().putBoolean("notificationRequested", true).apply();
+            play.setChecked(false);
+            requestPermissions(new String[] { Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS }, MICROPHONE_REQUEST);
+            return;
+        }
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             play.setChecked(false);
             requestPermissions(new String[] { Manifest.permission.RECORD_AUDIO }, MICROPHONE_REQUEST);

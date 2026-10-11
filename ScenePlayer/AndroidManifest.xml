@@ -1,68 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
 
-    <supports-screens android:smallScreens="false" />
-
     <application
         android:allowBackup="true"
         android:icon="@drawable/sceneplayer"
         android:label="@string/app_name"
-        android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
+        android:theme="@style/FullScreen.DisableSoundEffects" >
         <activity
             android:label="@string/app_name"
             android:name=".SceneTabs"
-            android:screenOrientation="portrait"
             android:exported="true">
             <intent-filter >
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <intent-filter >
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="rjdj" />
-            </intent-filter>
         </activity>
         <activity
             android:label="@string/app_name"
-            android:name=".SceneSelection"
-            android:screenOrientation="portrait" />
+            android:name=".SceneSelection" />
         <activity
             android:label="@string/app_name"
-            android:name=".RecordingSelection"
-            android:screenOrientation="portrait" />
+            android:name=".RecordingSelection" />
         <activity
             android:label="@string/app_name"
             android:name=".RecordingPlayer"
-            android:screenOrientation="portrait"
             android:theme="@style/FullScreen.DisableSoundEffects" />
-        <activity
-            android:label="File Dialog"
-            android:name="com.lamerman.FileDialog"
-            android:screenOrientation="portrait" />
         <activity
             android:label="@string/app_name"
-            android:launchMode="singleTask"
             android:name=".ScenePlayer"
-            android:screenOrientation="portrait"
             android:theme="@style/FullScreen.DisableSoundEffects" />
 
-        <service android:name="org.puredata.android.service.PdService"
+        <service android:name="org.puredata.android.service.PdService" android:exported="false"
             android:foregroundServiceType="mediaPlayback|microphone"/>
     </application>
 </manifest>

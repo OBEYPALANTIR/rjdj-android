@@ -1,54 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:orientation="vertical" android:layout_width="fill_parent"
-	android:layout_height="fill_parent" android:gravity="center">
-	<LinearLayout android:id="@+id/title_bar"
-		android:orientation="vertical" android:layout_alignParentTop="true"
-		android:layout_width="fill_parent" android:layout_height="65dip"
-		android:padding="0dip" android:background="@drawable/white_gradient_top">
-		<TextView android:id="@+id/sceneplayer_title"
-			android:layout_width="fill_parent" android:layout_height="wrap_content"
-			android:textColor="#000" android:gravity="center"
-			android:layout_weight="2" android:textSize="24sp" android:ellipsize="end"
-			android:singleLine="true" />
-		<TextView android:id="@+id/sceneplayer_artist"
-			android:layout_width="fill_parent" android:layout_height="wrap_content"
-			android:textColor="#555" android:gravity="center"
-			android:layout_weight="1" android:textSize="18sp"
-			android:paddingBottom="5dip" android:ellipsize="end"
-			android:singleLine="true" />
-	</LinearLayout>
-	<org.puredata.android.scenes.SceneView android:layout_below="@+id/title_bar"
-		android:id="@+id/sceneplayer_pic" android:layout_width="fill_parent"
-		android:layout_height="wrap_content" android:background="#000" />
-	<LinearLayout android:layout_width="fill_parent" android:gravity="center"
-		android:layout_height="wrap_content" android:orientation="horizontal"
-		android:layout_alignParentBottom="true" android:id="@+id/transport_bar"
-		android:padding="0dip" android:background="@drawable/white_gradient_bottom">
-		<ToggleButton android:layout_weight="1"
-			android:id="@+id/sceneplayer_pause" android:layout_width="wrap_content"
-			android:layout_height="wrap_content" android:checked="true"
-			android:drawableTop="@drawable/play_button" android:lines="0"
-			android:background="@drawable/all_transparent" />
-		<ToggleButton android:layout_weight="1"
-			android:id="@+id/sceneplayer_record" android:layout_width="wrap_content"
-			android:layout_height="wrap_content" android:checked="false"
-			android:drawableTop="@drawable/record_button" android:lines="0"
-			android:background="@drawable/all_transparent" />
-		<ImageButton android:layout_weight="1" android:id="@+id/sceneplayer_info"
-			android:layout_width="wrap_content" android:layout_height="wrap_content"
-			android:src="@drawable/info_button" android:background="@drawable/all_transparent" />
-	</LinearLayout>
-	<LinearLayout android:orientation="horizontal"
-		android:layout_above="@id/transport_bar" android:layout_below="@id/sceneplayer_pic"
-		android:layout_width="fill_parent" android:layout_height="wrap_content"
-		android:gravity="center">
-		<ImageView android:id="@+id/mic_icon" android:src="@drawable/mic_icon"
-			android:layout_width="wrap_content" android:layout_height="wrap_content"
-			android:layout_alignParentBottom="true" android:paddingLeft="12dip"
-			android:paddingTop="12dip" android:paddingBottom="12dip" />
-		<SeekBar android:id="@+id/mic_volume" android:layout_width="fill_parent"
-			android:layout_height="wrap_content" android:padding="12dip"
-			android:max="100" android:progress="100" />
-	</LinearLayout>
-</RelativeLayout>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="16dp" android:background="#FAF9F6">
+    <TextView android:id="@+id/sceneplayer_title" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:textSize="24sp" android:textStyle="bold"
+        android:textColor="#201E25" android:maxLines="2" android:ellipsize="end" />
+    <TextView android:id="@+id/sceneplayer_artist" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:textSize="16sp" android:textColor="#605D67"
+        android:maxLines="2" android:ellipsize="end" />
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:layout_marginTop="12dp" android:layout_marginBottom="12dp">
+        <org.puredata.android.scenes.SceneView android:id="@+id/sceneplayer_pic"
+            android:layout_width="match_parent" android:layout_height="match_parent"
+            android:layout_gravity="center" android:background="#201E25" android:scaleType="fitCenter"
+            android:contentDescription="@string/scene_surface" android:clickable="true" />
+    </FrameLayout>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/headphones_hint" android:textSize="14sp" android:textColor="#605D67" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/mic_level" android:labelFor="@id/mic_volume" android:textColor="#201E25"
+        android:layout_marginTop="8dp" />
+    <SeekBar android:id="@+id/mic_volume" android:layout_width="match_parent"
+        android:layout_height="48dp" android:max="100" android:progress="100"
+        android:contentDescription="@string/mic_level" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center">
+        <ToggleButton android:id="@+id/sceneplayer_pause" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1" android:minHeight="48dp"
+            android:textOn="@string/pause_action" android:textOff="@string/paused" android:checked="false" />
+        <ToggleButton android:id="@+id/sceneplayer_record" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1" android:minHeight="48dp"
+            android:textOn="@string/stoprec" android:textOff="@string/startrec" android:checked="false" />
+        <ImageButton android:id="@+id/sceneplayer_info" android:layout_width="56dp"
+            android:layout_height="56dp" android:src="@drawable/info_button"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/scene_info" />
+    </LinearLayout>
+</LinearLayout>

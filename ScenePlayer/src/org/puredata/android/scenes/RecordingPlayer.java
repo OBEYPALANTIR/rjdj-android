@@ -100,7 +100,11 @@ public class RecordingPlayer extends Activity implements OnSeekBarChangeListener
                 .setOnAudioFocusChangeListener(change -> {
                     if (change != AudioManager.AUDIOFOCUS_GAIN) pausePlayback();
                 }, handler).build();
-        registerReceiver(noisy, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY), RECEIVER_NOT_EXPORTED);
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(noisy, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY), RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(noisy, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
+        }
 		db = new SceneDataBase(this);
 		recordingId = this.getIntent().getLongExtra(RecordingColumn.ID.getLabel(), -1);
 		if (recordingId >= 0) {

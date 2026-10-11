@@ -4,7 +4,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:9.0.1'
+        classpath 'com.android.tools.build:gradle:9.1.1'
     }
 }
 
@@ -17,7 +17,7 @@ allprojects {
 
 ext {
     minSdk = 28
-    compileSdk = 34
+    compileSdk = 37
     androidxLegacySupportVersion = '1.0.0'
     ndkVersion = libs.versions.ndk.get()
     pdCoreVersion = '1.4.2-SNAPSHOT' // Must match version in PdCore/build.gradle
