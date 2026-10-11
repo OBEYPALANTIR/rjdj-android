@@ -28,8 +28,10 @@ jobs:
     - run: |
         git submodule sync --recursive
         git submodule update --init --recursive
-    - name: Install Android 17 build tools
-      run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;29.0.14206865'
+    - name: Set up Android 17 SDK
+      uses: android-actions/setup-android@v4
+      with:
+        packages: 'platforms;android-37.0 build-tools;37.0.0 ndk;29.0.14206865'
     - run: ./gradlew :ScenePlayer:checkSceneFiles :ScenePlayer:assembleDebug :ScenePlayer:assembleDebugAndroidTest :ScenePlayer:lintDebug --max-workers=2
     - uses: actions/upload-artifact@v5
       with:

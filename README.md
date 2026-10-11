@@ -8,6 +8,8 @@ Open a scene, put on headphones and tap **Play**. Grant microphone permission, t
 
 **Record** saves stereo scene output in the app's private storage. Listen and rename it in the **Recordings** tab. Playback continues in a microphone/media foreground service when the screen turns off. Pause, Back, audio focus loss or headphone disconnection stops capture. Notification permission enables the return-to-scene notification.
 
+The players keep their live audio and recording state during rotation and window resizing. Their flexible views remeasure in place; there are no alternate orientation layouts to reload. Other configuration changes can still recreate an activity.
+
 **Import a scene** opens Android's document picker. Choose a ZIP-format `.rj`, `.rjz` or `.zip` containing exactly one `.rj` folder with `_main.pd` and `Info.plist`. Scene files remain intact; playback uses a temporary copy with Android host bridges. Imports are limited to 4,096 entries, 64 MiB per file and 256 MiB total. Duplicate folder names are rejected without overwriting scenes.
 
 There is no network permission, account, scene marketplace or location capture. Recordings and imported scenes are local app data; Android backup may include them.
