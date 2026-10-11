@@ -12,16 +12,25 @@ package org.puredata.android.scenes;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.puredata.android.scenes.SceneDataBase.SceneColumn;
 import org.puredata.android.service.PdService;
 import org.puredata.core.PdBase;
 import org.puredata.core.PdListener;
-import org.puredata.core.utils.IoUtils;
-import org.puredata.core.utils.PdDispatcher;
+import org.puredata.android.io.AudioParameters;
+import org.puredata.android.io.PdAudio;
+import org.puredata.android.utils.PdUiDispatcher;
 
+import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
+import android.os.Handler;
+import android.os.Looper;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -36,18 +45,13 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.Location;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.telephony.PhoneStateListener;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
-import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -59,15 +63,22 @@ import android.widget.ToggleButton;
 
 public class ScenePlayer extends Activity implements SensorEventListener, OnTouchListener, OnClickListener, OnSeekBarChangeListener {
 
-	public static final String RECORDING_PATH = "recording_path";
 	private static final String TAG = "Pd Scene Player";
 	private static final String RJ_IMAGE_ANDROID = "rj_image_android";
 	private static final String RJ_TEXT_ANDROID = "rj_text_android";
 	private static final String TRANSPORT = "#transport";
 	private static final String ACCELERATE = "#accelerate";
 	private static final String MICVOLUME = "#micvolume";
-	private static final int SAMPLE_RATE = 22050;
-	private final Object lock = new Object();
+    private static final int MICROPHONE_REQUEST = 1;
+    private final Handler main = new Handler(Looper.getMainLooper());
+    private boolean destroyed, resumed, bound, wantsPlayback;
+    private File playbackFolder;
+    private Thread preparation;
+    private AudioManager audioManager;
+    private AudioFocusRequest focus;
+    private final BroadcastReceiver noisy = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) { stopAudio(); }
+    };
 	private SceneDataBase db;
 	private ProgressDialog progress = null;
 	private SceneView sceneView;
@@ -87,7 +98,7 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 	private PdService pdService = null;
 	private int patch = 0;
 	
-	private final PdDispatcher dispatcher = new PdDispatcher() {
+	private final PdUiDispatcher dispatcher = new PdUiDispatcher() {
 		@Override
 		public void print(String s) {
 			post(s);
@@ -119,7 +130,7 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 
 		@Override
 		public void receiveList(String source, Object... args) {
-			if (args.length < 2 || !(args[0] instanceof String) || !(args[1] instanceof String)) return;
+			if (destroyed || args.length < 2 || !(args[0] instanceof String) || !(args[1] instanceof String)) return;
 			String key = (String) args[0];
 			String cmd = (String) args[1];
 			if (overlays.containsKey(key)) {
@@ -166,7 +177,9 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 				String arg = (String) args[2];
 				Overlay overlay;
 				if (cmd.equals("load")) {
-					overlay = new ImageOverlay(new File(sceneFolder, arg).getAbsolutePath());
+					try {
+                        overlay = new ImageOverlay(ScenePlayback.containedFile(playbackFolder, arg).getAbsolutePath());
+                    } catch (IOException e) { post("Rejected scene image: " + arg); return; }
 				} else if (cmd.equals("text")) {
 					overlay = new TextOverlay(arg);
 				} else return;
@@ -179,15 +192,18 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 	private final ServiceConnection serviceConnection = new ServiceConnection() {
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
-			synchronized(lock) {
-				pdService = ((PdService.PdBinder)service).getService();
-				initPd();
-			}
+            if (destroyed) return;
+            pdService = ((PdService.PdBinder) service).getService();
+            PdBase.setReceiver(dispatcher);
+            dispatcher.addListener(RJ_IMAGE_ANDROID, overlayListener);
+            dispatcher.addListener(RJ_TEXT_ANDROID, overlayListener);
+            if (wantsPlayback && resumed) startAudio();
 		}
 
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
-			// this method will never be called
+			pdService = null;
+            stopAudio();
 		}
 	};
 
@@ -199,7 +215,11 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 		sceneId = intent.getLongExtra(SceneColumn.ID.getLabel(), -1);
 		if (sceneId >= 0) {
 			Cursor cursor = db.getScene(sceneId);
-			String scenePath = SceneDataBase.getString(cursor, SceneColumn.SCENE_DIRECTORY);
+			if (cursor == null || !cursor.moveToFirst()) {
+                if (cursor != null) cursor.close();
+                toast("Scene is no longer available"); finish(); return;
+            }
+            String scenePath = SceneDataBase.getString(cursor, SceneColumn.SCENE_DIRECTORY);
 			artist = SceneDataBase.getString(cursor, SceneColumn.SCENE_ARTIST);
 			title = SceneDataBase.getString(cursor, SceneColumn.SCENE_TITLE);
 			description = SceneDataBase.getString(cursor, SceneColumn.SCENE_INFO);
@@ -211,8 +231,7 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 			progress.setMessage("Loading scene...");
 			progress.show();
 			sceneFolder = new File(scenePath);
-			String recDirPath = intent.getStringExtra(RECORDING_PATH);
-			recDir = new File(recDirPath != null ? recDirPath : getResources().getString(R.string.recording_folder));
+			recDir = new File(getFilesDir(), "recordings");
 			if (recDir.isFile() || (!recDir.exists() && !recDir.mkdirs())) recDir = null;
 			initGui();
 			initSystemServices();
@@ -223,51 +242,41 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 		}
 	}
 
-	private void initPdService() {
-		new Thread() {
-			@Override
-			public void run() {
-				fixScene();
-				bindService(new Intent(ScenePlayer.this, PdService.class), serviceConnection, BIND_AUTO_CREATE);
-			}
-		}.start();
-	}
+    private void initPdService() {
+        play.setEnabled(false);
+        preparation = new Thread(() -> {
+            try {
+                final File copy = ScenePlayback.prepare(sceneFolder, getCacheDir());
+                main.post(() -> {
+                    if (destroyed) { ScenePlayback.delete(copy); return; }
+                    playbackFolder = copy;
+                    play.setEnabled(true);
+                    dismissProgressDialog();
+                });
+            } catch (IOException e) {
+                main.post(() -> {
+                    if (!destroyed) { toast("Unable to prepare scene: " + e.getMessage()); finish(); }
+                });
+            }
+        }, "scene-copy");
+        preparation.start();
+    }
 
-	private void initSystemServices() {
-		SensorManager sm = (SensorManager) getSystemService(SENSOR_SERVICE);
-		sm.registerListener(this, sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
-		TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-		telephonyManager.listen(new PhoneStateListener() {
-			@Override
-			public void onCallStateChanged(int state, String incomingNumber) {
-				synchronized (lock) {
-					if (pdService == null) return;
-					if (state == TelephonyManager.CALL_STATE_IDLE) {
-						if (play.isChecked() && !pdService.isRunning()) {
-							startAudio();
-						}
-					} else {
-						if (pdService.isRunning()) {
-							stopAudio();
-						}
-					}
-				}
-			}
-		}, PhoneStateListener.LISTEN_CALL_STATE);
-	}
-
-	private void fixScene() {
-		// weird little hack to avoid having our rj_image.pd and such masked by files in the scene
-		for (String s: new String[] {"rj_image.pd", "rj_text.pd", "soundinput.pd", "soundoutput.pd"}) {
-			List<File> list = IoUtils.find(sceneFolder, s);
-			for (File file: list) file.delete();
-		}
-	}
+    private void initSystemServices() {
+        audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        focus = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+                .setOnAudioFocusChangeListener(change -> {
+                    if (change != AudioManager.AUDIOFOCUS_GAIN) stopAudio();
+                }, main).build();
+        registerReceiver(noisy, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY), RECEIVER_NOT_EXPORTED);
+    }
 
 	@Override
 	public void onSensorChanged(SensorEvent event) {
 		final float q = 1.0f / SensorManager.GRAVITY_EARTH;  // convert acceleration units from m/s^2 to g
-		PdBase.sendList(ACCELERATE, event.values[0] * q, -event.values[1] * q, -event.values[2] * q);
+		if (pdService != null && pdService.isRunning()) PdBase.sendList(ACCELERATE, event.values[0] * q, -event.values[1] * q, -event.values[2] * q);
 		/**
 		 * Explanation:  Observation of RjDj patches suggests that the z-axis points
 		 * downward on iPhones.  Since I'm pretty sure that the coordinate system is
@@ -284,27 +293,52 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
-		return (v == sceneView) && VersionedTouch.evaluateTouch(event, sceneView.getWidth(), sceneView.getHeight());
+		if (v == sceneView && event.getActionMasked() == MotionEvent.ACTION_UP) v.performClick();
+        return (v == sceneView) && VersionedTouch.evaluateTouch(event, sceneView.getWidth(), sceneView.getHeight());
 	}
 
 	@Override
 	protected void onPause() {
+		resumed = false;
+        if (pdService == null || !pdService.isRunning()) {
+            wantsPlayback = false;
+            if (play != null) play.setChecked(false);
+        }
 		getPreferences(MODE_PRIVATE).edit().putInt(MICVOLUME, micValue).commit();
 		dismissProgressDialog();
 		super.onPause();
 	}
 
+    @Override protected void onResume() { super.onResume(); resumed = true; }
+
+    @Override protected void onStop() {
+        super.onStop();
+        if (isFinishing()) stopAudio();
+    }
+
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (requestCode == MICROPHONE_REQUEST) {
+            wantsPlayback = false;
+            play.setChecked(false);
+            toast(results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED
+                    ? "Microphone allowed. Tap Play to start." : "Microphone is required. Tap Play to try again.");
+        }
+    }
+
 	@Override
 	protected void onDestroy() {
-		super.onDestroy();
+		destroyed = true;
+        dismissProgressDialog();
+        if (preparation != null) preparation.interrupt();
 		cleanup();
+        super.onDestroy();
 		db.close();
 	}
 
 	private void initGui() {
-		int flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
-		getWindow().setFlags(flags, flags);
 		setContentView(R.layout.scene_player);
+        SceneWindow.fitSystemBars(this);
 		TextView tv = (TextView) findViewById(R.id.sceneplayer_title);
 		tv.setText(title);
 		tv = (TextView) findViewById(R.id.sceneplayer_artist);
@@ -313,8 +347,10 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 		sceneView.setOnTouchListener(this);
 		sceneView.setImageBitmap(BitmapFactory.decodeFile(new File(sceneFolder, "image.jpg").getAbsolutePath()));
 		play = (ToggleButton) findViewById(R.id.sceneplayer_pause);
+		play.setChecked(false);
 		play.setOnClickListener(this);
 		record = (ToggleButton) findViewById(R.id.sceneplayer_record);
+		record.setChecked(false);
 		record.setOnClickListener(this);
 		info = (ImageButton) findViewById(R.id.sceneplayer_info);
 		info.setOnClickListener(this);
@@ -323,44 +359,20 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 		micVolume.setOnSeekBarChangeListener(this);
 	}
 
-	private void initPd() {
-		// run in a separate thread in order to keep the progress wheel spinning
-		new Thread() {
-			@Override
-			public void run() {
-				PdBase.setReceiver(dispatcher);
-				dispatcher.addListener(RJ_IMAGE_ANDROID, overlayListener);
-				dispatcher.addListener(RJ_TEXT_ANDROID, overlayListener);
-				startAudio();
-				dismissProgressDialog();
-			}
-		}.start();
-	}
 
 	private void dismissProgressDialog() {
 		if (progress!= null) progress.dismiss();
 	}
 
-	private void cleanup() {
-		synchronized (lock) {
-			// make sure to release all resources
-			stopRecording();
-			stopAudio();
-			if (patch != 0) {
-				PdBase.closePatch(patch);
-				patch = 0;
-			}
-			dispatcher.release();
-			if (pdService != null) {
-				try {
-					unbindService(serviceConnection);
-				} catch (IllegalArgumentException e) {
-					// already unbound
-				}
-				pdService = null;
-			}
-		}
-	}
+    private void cleanup() {
+        stopAudio();
+        if (patch != 0) { PdBase.closePatch(patch); patch = 0; }
+        dispatcher.release();
+        if (bound) { unbindService(serviceConnection); bound = false; }
+        pdService = null;
+        if (audioManager != null) unregisterReceiver(noisy);
+        ScenePlayback.delete(playbackFolder);
+    }
 
 	@Override
 	public void onClick(View v) {
@@ -382,7 +394,7 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 	}
 
 	private void startRecording() {
-		if (recDir == null) {
+		if (recDir == null || pdService == null || !pdService.isRunning()) {
 			record.setChecked(false);
 			return;
 		}
@@ -398,81 +410,61 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 		if (recFile == null) return;
 		PdBase.sendMessage(TRANSPORT, "record", 0);
 		long duration = System.currentTimeMillis() - recStart;
-		double longitude = 0.0;
-		double latitude = 0.0;
-		try {
-			LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-			if (locationManager != null) {  // Paranoid?  Maybe...
-				Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-				if (location != null) {
-					longitude = location.getLongitude();
-					latitude = location.getLatitude();
-				}
-			}
-		} catch (SecurityException e) {
-			// ignore
-		}
-		db.addRecording(recFile, recStart, duration, longitude, latitude, sceneId);
+		db.addRecording(recFile, recStart, duration, 0.0, 0.0, sceneId);
+        record.setChecked(false);
 		recFile = null;
 		post("Finished recording");
 	}
 
-	private boolean initAudio(int nIn, int nOut) {
-		try {
-			pdService.initAudio(SAMPLE_RATE, nIn, nOut, -1);   // negative values default to PdService preferences
-		} catch (IOException e) {
-			Log.e(TAG, e.toString());
-			return false;
-		}
-		return true;
-	}
+    private void startAudio() {
+        if (destroyed || !resumed || playbackFolder == null) { play.setChecked(false); return; }
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            play.setChecked(false);
+            requestPermissions(new String[] { Manifest.permission.RECORD_AUDIO }, MICROPHONE_REQUEST);
+            return;
+        }
+        wantsPlayback = true;
+        if (pdService == null) {
+            if (!bound) bound = bindService(new Intent(this, PdService.class), serviceConnection, BIND_AUTO_CREATE);
+            if (!bound) { stopAudio(); toast("Unable to connect audio service"); }
+            return;
+        }
+        if (pdService.isRunning()) return;
+        if (audioManager.requestAudioFocus(focus) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            stopAudio(); toast("Audio focus unavailable. Tap Play to retry."); return;
+        }
+        try {
+            int rate = AudioParameters.suggestSampleRate();
+            if (rate <= 0 || !AudioParameters.checkParameters(rate, 1, 2))
+                throw new IOException("Device does not support microphone and stereo audio");
+            pdService.initAudio(rate, 1, 2, -1);
+            if (patch == 0) patch = PdBase.openPatch(new File(playbackFolder, "_main.pd"));
+            adjustMicVolume(micValue);
+            Intent returnIntent = new Intent(this, ScenePlayer.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    .putExtra(SceneColumn.ID.getLabel(), sceneId);
+            pdService.startAudio(returnIntent, R.drawable.sceneplayer_notify, title + " by " + artist, "Return to scene");
+            PdBase.sendMessage(TRANSPORT, "play", 1);
+            SensorManager sm = (SensorManager) getSystemService(SENSOR_SERVICE);
+            sm.registerListener(this, sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
+            play.setChecked(true);
+        } catch (IOException | RuntimeException e) {
+            stopAudio(); toast("Unable to start microphone audio: " + e.getMessage());
+        }
+    }
 
-	private void startAudio() {
-		synchronized (lock) {
-			if (pdService == null) return;
-			if (!initAudio(1, 2)) {  // only trying one input channel to avoid failures on Samsung Galaxy Tab
-				if (!initAudio(0, 2)) {
-					toast("Unable to initialize audio interface");
-					finish();
-					return;
-				} else {
-					toast("Warning: No audio input available");
-				}
-			}
-			if (patch == 0) {
-				try {
-					patch = PdBase.openPatch(new File(sceneFolder, "_main.pd"));
-					adjustMicVolume(micValue);
-				} catch (IOException e) {
-					Log.e(TAG, e.toString());
-					toast("Unable to open patch; exiting");
-					finish();
-					return;
-				}
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					Thread.currentThread().interrupt();  // Preserve interrupt flag for caller.
-				}
-			}
-			pdService.startAudio(new Intent(this, ScenePlayer.class), R.drawable.sceneplayer_notify,
-					title + " by " + artist, "Return to scene.");
-			PdBase.sendMessage(TRANSPORT, "play", 1);
-		}
-	}
-
-	private void stopAudio() {
-		synchronized (lock) {
-			if (pdService == null) return;
-			PdBase.sendMessage(TRANSPORT, "play", 0);
-			try {
-				Thread.sleep(50);
-			} catch (InterruptedException e) {
-				// do nothing
-			}
-			pdService.stopAudio();
-		}
-	}
+    private void stopAudio() {
+        wantsPlayback = false;
+        stopRecording();
+        if (pdService != null) {
+            PdBase.sendMessage(TRANSPORT, "play", 0);
+            pdService.stopAudio();
+            PdAudio.release();
+        }
+        ((SensorManager) getSystemService(SENSOR_SERVICE)).unregisterListener(this);
+        if (audioManager != null) audioManager.abandonAudioFocusRequest(focus);
+        if (play != null) play.setChecked(false);
+    }
 
 	private void showInfo() {
 		AlertDialog.Builder ad = new AlertDialog.Builder(this);

@@ -256,7 +256,7 @@ public class PdService extends Service {
 			notificationManager.createNotificationChannel(channel);
 		}
 
-		PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_IMMUTABLE);
+		PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 		return new Notification.Builder(PdService.this, TAG)
 				.setSmallIcon(icon)
 				.setContentTitle(title)
