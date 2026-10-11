@@ -10,27 +10,19 @@
 package org.puredata.android.scenes;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.List;
-
+import java.lang.ref.WeakReference;
 import org.puredata.android.scenes.SceneDataBase.SceneColumn;
-import org.puredata.core.utils.IoUtils;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -43,17 +35,15 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.lamerman.FileDialog;
-
 public class SceneSelection extends Activity implements OnItemClickListener, OnItemLongClickListener, OnClickListener {
 
 	private static final String TAG = "Scene Selection";
 	private static final int FILE_SELECT_CODE = 1;
 	private ListView sceneView;
 	private Button updateButton;
-	private Button downloadButton;
 	private SceneDataBase db;
 	private Cursor cursor = null;
+	private boolean destroyed;
 	private Toast toast = null;
 	
 	private void toast(final String msg) {
@@ -73,36 +63,15 @@ public class SceneSelection extends Activity implements OnItemClickListener, OnI
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		initGui();
-		db = new SceneDataBase(this);
-		try {
-			// Many thanks to Frank Barknecht for providing Atsuke as a sample scene for inclusion in this package!
-			addSceneDirectory(getResources().openRawResource(R.raw.atsuke));
-		} catch (Exception e) {
-			// Do nothing.
-		}
-	}
-	
-	@Override
-	protected void onNewIntent(Intent intent) {
-		final Uri uri = intent.getData();
-		if (uri.getScheme().equals(("rjdj")) || uri.getScheme().equals("http")) {
-			new AsyncTask<Void, Void, Void>() {
-				@Override
-				protected Void doInBackground(Void... params) {
-					try {
-						URL url = new URL("http:" + uri.toString().substring(5));
-						URLConnection connection = url.openConnection();
-						connection.connect();
-						addSceneDirectory(connection.getInputStream());
-					} catch (Exception e) {
-						toast("Unable to open URI " + uri);
-					}
-					return null;
-				}
-			}.execute();
-		}
-	}
-	
+        try { db = new SceneDataBase(this); }
+        catch (RuntimeException e) {
+            toast("Cannot open scene library: " + e.getMessage());
+            finish();
+            return;
+        }
+        new ImportTask(this, null).execute();
+    }
+
 	@Override
 	protected void onResume() {
 		super.onResume();
@@ -111,9 +80,11 @@ public class SceneSelection extends Activity implements OnItemClickListener, OnI
 	
 	@Override
 	protected void onDestroy() {
-		super.onDestroy();
-		cursor.close();
-		db.close();
+		destroyed = true;
+        sceneView.setAdapter(null);
+        if (cursor != null) cursor.close();
+        if (db != null) db.close();
+        super.onDestroy();
 	}
 
 	private void initGui() {
@@ -121,27 +92,33 @@ public class SceneSelection extends Activity implements OnItemClickListener, OnI
 		sceneView = (ListView) findViewById(R.id.scene_selection);
 		updateButton = new Button(this);
 		updateButton.setText(getResources().getString(R.string.update_label));
-        downloadButton = new Button(this);
-        downloadButton.setText(getResources().getString(R.string.download_label));
 		sceneView.addFooterView(updateButton);
-//		sceneView.addFooterView(downloadButton);
 		sceneView.setOnItemClickListener(this);
 		sceneView.setOnItemLongClickListener(this);
 		updateButton.setOnClickListener(this);
-        downloadButton.setOnClickListener(this);
 	}
 
 	private void updateList() {
-		if (cursor != null) {
-			cursor.close();
-		}
-		cursor = db.getAllScenes();
-		SceneListCursorAdapter adapter = new SceneListCursorAdapter(SceneSelection.this, cursor);
-		sceneView.setAdapter(adapter);
+        if (destroyed || db == null) return;
+        Cursor next = null;
+        try {
+            next = db.getAllScenes();
+            if (next == null) throw new IllegalStateException("Cannot read scene library");
+            sceneView.setAdapter(new SceneListCursorAdapter(this, next));
+            Cursor previous = cursor;
+            cursor = next;
+            next = null;
+            if (previous != null) previous.close();
+        } catch (RuntimeException e) {
+            toast("Cannot read scene library: " + e.getMessage());
+        } finally {
+            if (next != null) next.close();
+        }
 	}
 	
 	@Override
 	public void onItemClick(AdapterView<?> arg0, View v, int position, long id) {
+        if (id < 0) return;
 		Intent intent = new Intent(this, ScenePlayer.class);
 		intent.putExtra(SceneColumn.ID.getLabel(), id);
 		startActivity(intent);
@@ -149,6 +126,7 @@ public class SceneSelection extends Activity implements OnItemClickListener, OnI
 
 	@Override
 	public boolean onItemLongClick(AdapterView<?> arg0, View v, int position, final long id) {
+        if (id < 0) return false;
 		AlertDialog.Builder dialog = new AlertDialog.Builder(this);
 		dialog.setIcon(android.R.drawable.ic_dialog_alert);
 		dialog.setTitle(getResources().getString(R.string.delete_scene_title));
@@ -158,7 +136,7 @@ public class SceneSelection extends Activity implements OnItemClickListener, OnI
 			public void onClick(DialogInterface dialog, int which) {
 				try {
 					db.deleteScene(id);
-				} catch (IOException e) {
+				} catch (IOException | RuntimeException e) {
 					toast(getResources().getString(R.string.delete_scene_fail));
 				}
 				updateList();
@@ -171,42 +149,28 @@ public class SceneSelection extends Activity implements OnItemClickListener, OnI
 
 	@Override
 	public void onClick(View v) {
-		if (v.equals(updateButton)) {
-			Intent intent = new Intent(this, FileDialog.class);
-			SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
-			String startPath = prefs.getString(FileDialog.START_PATH,
-					Environment.getExternalStorageDirectory().getPath());
-			intent.putExtra(FileDialog.START_PATH, startPath);
-			intent.putExtra(FileDialog.SELECT_PATTERN, ".*\\.(rj|rjz)");
-			intent.putExtra(FileDialog.ACCEPT_FOLDER, true);
-			intent.putExtra(FileDialog.ACCEPT_FILE, true);
-			startActivityForResult(intent, FILE_SELECT_CODE);
-		} else if (v.equals(downloadButton)) {
-			Intent intent = new Intent(Intent.ACTION_VIEW);
-			intent.setData(Uri.parse(getResources().getString(R.string.download_url)));
-			startActivity(intent);
-		}
-	}
-	
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (resultCode == RESULT_OK && requestCode == FILE_SELECT_CODE) {
-			String path = data.getStringExtra(FileDialog.RESULT_PATH);
-			File file = new File(path);
-			try {
-				if (file.isDirectory()) {
-					addSceneDirectory(file);
-				} else {
-					addSceneDirectory(new FileInputStream(file));
-				}
-				SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
-				prefs.edit().putString(FileDialog.START_PATH, file.getParent()).commit();
-			} catch (Exception e) {
-				toast(getResources().getString(R.string.open_scene_fail) + " " + path);
-			}
-		}
-	}
-	
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        // Scene archives have inconsistent MIME types; validate the selected content itself.
+        intent.setType("*/*");
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        try { startActivityForResult(intent, FILE_SELECT_CODE); }
+        catch (RuntimeException e) { toast("No document picker is available"); }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == FILE_SELECT_CODE && resultCode == RESULT_OK) {
+            Uri uri = data == null ? null : data.getData();
+            if (uri == null || !"content".equals(uri.getScheme())) {
+                toast("The document provider returned no readable archive");
+                return;
+            }
+            new ImportTask(this, uri).execute();
+        }
+    }
+
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
@@ -231,26 +195,48 @@ public class SceneSelection extends Activity implements OnItemClickListener, OnI
 		return true;
 	}
 
-	private void addSceneDirectory(File file) throws IOException {
-		db.addScene(file);
-		runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				updateList();
-			}
-		});
-	}
+    private static class ImportTask extends AsyncTask<Void, Void, String> {
+        private final WeakReference<SceneSelection> owner;
+        private final Context context;
+        private final Uri uri;
 
-	private void addSceneDirectory(InputStream in) throws IOException {
-		List<File> files = IoUtils.extractZipResource(in, getDir("scenes", Context.MODE_PRIVATE), true);
-		if (files.isEmpty()) {
-			toast("Received no files from stream.");
-			return;
-		}
-		File file = files.get(0);
-		while (!file.isDirectory() && !file.getName().endsWith(".rj")) {
-			file = file.getParentFile();
-		}
-		addSceneDirectory(file);
-	}
+        ImportTask(SceneSelection activity, Uri uri) {
+            owner = new WeakReference<SceneSelection>(activity);
+            context = activity.getApplicationContext();
+            this.uri = uri;
+        }
+
+        @Override protected String doInBackground(Void... ignored) {
+            boolean seed = uri == null;
+            if (seed && context.getSharedPreferences(TAG, MODE_PRIVATE).getBoolean("defaultSeeded", false)) return null;
+            File scene = null;
+            File root = context.getDir("scenes", MODE_PRIVATE);
+            try (InputStream in = seed ? context.getResources().openRawResource(R.raw.atsuke)
+                    : context.getContentResolver().openInputStream(uri)) {
+                // Existing installations already contain the sample; never overwrite it.
+                if (seed && new File(root, "Atsuke.rj").exists()) {
+                    context.getSharedPreferences(TAG, MODE_PRIVATE).edit().putBoolean("defaultSeeded", true).apply();
+                    return null;
+                }
+                scene = SceneArchive.importScene(in, root);
+                SceneDataBase database = new SceneDataBase(context);
+                try { database.addScene(scene); }
+                finally { database.close(); }
+                if (seed) context.getSharedPreferences(TAG, MODE_PRIVATE).edit().putBoolean("defaultSeeded", true).apply();
+                return seed ? null : "Scene imported";
+            } catch (Exception e) {
+                if (scene != null) {
+                    try { SceneArchive.deleteOwnedTree(root, scene); }
+                    catch (IOException cleanup) { return "Import failed; private staging cleanup failed: " + cleanup.getMessage(); }
+                }
+                return "Unable to import scene: " + e.getMessage();
+            }
+        }
+
+        @Override protected void onPostExecute(String result) {
+            SceneSelection activity = owner.get();
+            if (activity != null && !activity.destroyed) activity.updateList();
+            if (result != null) Toast.makeText(context, result, Toast.LENGTH_LONG).show();
+        }
+    }
 }
