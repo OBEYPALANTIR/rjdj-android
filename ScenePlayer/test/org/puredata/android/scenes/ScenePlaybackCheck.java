@@ -20,10 +20,12 @@ public final class ScenePlaybackCheck {
             Files.write(new File(nested, "image.png").toPath(), new byte[] {5, 6});
             File cache = new File(root, "cache");
             File copy = ScenePlayback.prepare(source, cache);
-            assert new File(source, "rj_image.pd").isFile();
-            assert new File(nested, "soundinput.pd").isFile();
-            assert !new File(copy, "rj_image.pd").exists();
-            assert !new File(copy, "nested/soundinput.pd").exists();
+            for (String name : new String[] {"rj_image.pd", "rj_text.pd", "soundinput.pd", "soundoutput.pd"}) {
+                assert new File(source, name).isFile();
+                assert new File(nested, name).isFile();
+                assert !new File(copy, name).exists();
+                assert !new File(copy, "nested/" + name).exists();
+            }
             assert Files.readAllBytes(ScenePlayback.containedFile(copy, "nested/image.png").toPath())[0] == 5;
             for (String bad : new String[] {"../source/_main.pd", "/etc/passwd", "."}) {
                 try { ScenePlayback.containedFile(copy, bad); throw new AssertionError("Accepted " + bad); }
@@ -34,7 +36,13 @@ public final class ScenePlaybackCheck {
             catch (IOException expected) { }
             assert cache.list().length == 1 : "Failed copy leaked cache";
             assert new File(source, "_main.pd").isFile();
-            System.out.println("PASS: source preserved, nested bridge omission, asset bytes, traversal/absolute/root rejection, symlink rejection, failed-copy cleanup");
+            Files.delete(new File(source, "escape").toPath());
+            File deep = source;
+            for (int i = 0; i < 65; i++) { deep = new File(deep, "d"); assert deep.mkdir(); }
+            try { ScenePlayback.prepare(source, cache); throw new AssertionError("Accepted excessive depth"); }
+            catch (IOException expected) { }
+            assert cache.list().length == 1;
+            System.out.println("PASS: source preserved, nested bridge omission, asset bytes, traversal/absolute/root rejection, symlink/depth rejection, failed-copy cleanup");
         } finally { ScenePlayback.delete(root); }
     }
 }
