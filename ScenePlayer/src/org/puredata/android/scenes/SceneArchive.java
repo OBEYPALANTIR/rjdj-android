@@ -96,7 +96,7 @@ public final class SceneArchive {
         }
     }
 
-    private static void requireOwned(File root, File target) throws IOException {
+    static void requireOwned(File root, File target) throws IOException {
         String prefix = root.getCanonicalPath() + File.separator;
         if (!target.getCanonicalPath().startsWith(prefix)) throw new IOException("Path is outside private storage");
         // Reject links even when they point elsewhere within the owned directory.

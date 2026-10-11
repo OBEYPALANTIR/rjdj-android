@@ -208,6 +208,15 @@ public class SceneSelection extends Activity implements OnItemClickListener, OnI
 
         @Override protected String doInBackground(Void... ignored) {
             boolean seed = uri == null;
+            SceneDataBase recovery = null;
+            try {
+                recovery = new SceneDataBase(context);
+                recovery.recoverScenes();
+            } catch (Exception e) {
+                return "Unable to restore scene library: " + e.getMessage();
+            } finally {
+                if (recovery != null) recovery.close();
+            }
             if (seed && context.getSharedPreferences(TAG, MODE_PRIVATE).getBoolean("defaultSeeded", false)) return null;
             File scene = null;
             boolean imported = false;

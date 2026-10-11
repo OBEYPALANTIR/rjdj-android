@@ -19,7 +19,17 @@ public final class ScenePlaybackCheck {
             }
             Files.write(new File(nested, "image.png").toPath(), new byte[] {5, 6});
             File cache = new File(root, "cache");
+            File abandoned = new File(cache, "playback-abandoned");
+            assert abandoned.mkdirs();
+            Files.write(new File(abandoned, "unfinished").toPath(), new byte[] {9});
+            File unrelated = new File(cache, "unrelated");
+            assert unrelated.mkdir();
             File copy = ScenePlayback.prepare(source, cache);
+            assert !abandoned.exists() : "Abandoned playback copy survived restart";
+            assert unrelated.isDirectory() : "Unrelated cache was removed";
+            File second = ScenePlayback.prepare(source, cache);
+            assert new File(copy, "_main.pd").isFile() : "A live player's copy was removed";
+            assert new File(second, "_main.pd").isFile();
             for (String name : new String[] {"rj_image.pd", "rj_text.pd", "soundinput.pd", "soundoutput.pd"}) {
                 assert new File(source, name).isFile();
                 assert new File(nested, name).isFile();
@@ -34,15 +44,15 @@ public final class ScenePlaybackCheck {
             Files.createSymbolicLink(new File(source, "escape").toPath(), root.toPath());
             try { ScenePlayback.prepare(source, cache); throw new AssertionError("Accepted symbolic link"); }
             catch (IOException expected) { }
-            assert cache.list().length == 1 : "Failed copy leaked cache";
+            assert cache.list().length == 3 : "Failed copy leaked cache or removed a live copy";
             assert new File(source, "_main.pd").isFile();
             Files.delete(new File(source, "escape").toPath());
             File deep = source;
             for (int i = 0; i < 65; i++) { deep = new File(deep, "d"); assert deep.mkdir(); }
             try { ScenePlayback.prepare(source, cache); throw new AssertionError("Accepted excessive depth"); }
             catch (IOException expected) { }
-            assert cache.list().length == 1;
-            System.out.println("PASS: source preserved, nested bridge omission, asset bytes, traversal/absolute/root rejection, symlink/depth rejection, failed-copy cleanup");
+            assert cache.list().length == 3;
+            System.out.println("PASS: abandoned-cache recovery, live/unrelated cache preservation, source preserved, nested bridge omission, asset bytes, traversal/absolute/root rejection, symlink/depth rejection, failed-copy cleanup");
         } finally { ScenePlayback.delete(root); }
     }
 }

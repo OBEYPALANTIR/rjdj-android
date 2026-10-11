@@ -4,10 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
+import java.util.HashSet;
+import java.util.Set;
 
 /** Private playback copies leave imported scene abstractions intact. */
 final class ScenePlayback {
     private static final long MAX_BYTES = 256L * 1024 * 1024;
+    private static final Set<File> activeCopies = new HashSet<>();
 
     static File containedFile(File root, String path) throws IOException {
         File file = new File(root, path).getCanonicalFile();
@@ -19,7 +22,19 @@ final class ScenePlayback {
     static File prepare(File source, File cache) throws IOException {
         if (!source.isDirectory()) throw new IOException("Scene is missing");
         Files.createDirectories(cache.toPath());
-        File copy = Files.createTempDirectory(cache.toPath(), "playback-").toFile();
+        File copy;
+        synchronized (ScenePlayback.class) {
+            File[] previous = cache.listFiles((directory, name) -> name.startsWith("playback-"));
+            if (previous == null) throw new IOException("Cannot inspect scene cache");
+            for (File stale : previous) {
+                if (activeCopies.contains(stale)) continue;
+                delete(stale);
+                if (stale.exists()) throw new IOException("Cannot reclaim scene cache");
+            }
+            copy = Files.createTempDirectory(cache.toPath(), "playback-").toFile();
+            // Process-local ownership keeps live players safe; after process death none are owned.
+            activeCopies.add(copy);
+        }
         try {
             copy(source.getCanonicalFile(), copy, 0, new long[2]);
             if (!new File(copy, "_main.pd").isFile()) throw new IOException("Scene has no _main.pd");
@@ -51,12 +66,13 @@ final class ScenePlayback {
         }
     }
 
-    static void delete(File file) {
+    static synchronized void delete(File file) {
         if (file == null) return;
         if (!Files.isSymbolicLink(file.toPath()) && file.isDirectory()) {
             File[] children = file.listFiles();
             if (children != null) for (File child : children) delete(child);
         }
         file.delete();
+        activeCopies.remove(file);
     }
 }

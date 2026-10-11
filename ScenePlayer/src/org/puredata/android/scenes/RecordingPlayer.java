@@ -27,6 +27,7 @@ import android.media.AudioFocusRequest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.os.Handler;
 import android.os.Looper;
 import android.media.MediaPlayer;
@@ -50,6 +51,7 @@ public class RecordingPlayer extends Activity implements OnSeekBarChangeListener
 	private SceneDataBase db;
 	private long recordingId;
 	private long sceneId;
+    private long recordingDuration, recordingTime;
 	private String description;
 	private ToggleButton playButton;
 	private ImageButton sceneButton;
@@ -91,8 +93,6 @@ public class RecordingPlayer extends Activity implements OnSeekBarChangeListener
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		this.setContentView(R.layout.recording_player);
-        SceneWindow.fitSystemBars(this);
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         focus = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
@@ -114,34 +114,15 @@ public class RecordingPlayer extends Activity implements OnSeekBarChangeListener
                 toast(getString(R.string.no_such_recording)); finish(); return;
             }
 			sceneId = SceneDataBase.getLong(cursor, RecordingColumn.SCENE_ID);
-			displaySceneInfo(sceneId);
-			seekBar = (SeekBar) findViewById(R.id.recording_play_seekbar);
-			seekBar.setMax((int) SceneDataBase.getLong(cursor, RecordingColumn.RECORDING_DURATION));
-			seekBar.setOnSeekBarChangeListener(this);
-			descriptionView = (TextView) findViewById(R.id.recording_play_description_text);
 			description = SceneDataBase.getString(cursor, RecordingColumn.RECORDING_DESCRIPTION);
-			descriptionView.setText(description);
-			TextView textView = (TextView) findViewById(R.id.recording_play_duration_text);
-			String durationFormat = this.getString(R.string.duration_format);
-			textView.setText(DateFormat.format(durationFormat, SceneDataBase.getLong(cursor, RecordingColumn.RECORDING_DURATION)));
-			textView = (TextView) findViewById(R.id.recording_play_date_text);
-			String dateFormat = this.getString(R.string.date_format);
-			textView.setText(DateFormat.format(dateFormat, SceneDataBase.getLong(cursor, RecordingColumn.RECORDING_TIMESTAMP)));
-
-			playButton = (ToggleButton) findViewById(R.id.recording_play_play_button);
-			playButton.setChecked(false);
-            playButton.setEnabled(false);
-            playButton.setOnCheckedChangeListener(this);
-			sceneButton = (ImageButton) findViewById(R.id.recording_play_scene_button);
-			sceneButton.setOnClickListener(this);
-            sceneButton.setEnabled(sceneAvailable);
-			editButton = (ImageButton) findViewById(R.id.recording_play_rename_button);
-			editButton.setOnClickListener(this);
+            recordingDuration = SceneDataBase.getLong(cursor, RecordingColumn.RECORDING_DURATION);
+            recordingTime = SceneDataBase.getLong(cursor, RecordingColumn.RECORDING_TIMESTAMP);
+			String recPath = SceneDataBase.getString(cursor, RecordingColumn.RECORDING_PATH);
+			cursor.close();
+            initGui();
 			mediaPlayer = new MediaPlayer();
 			mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 			mediaPlayer.setLooping(true);
-			String recPath = SceneDataBase.getString(cursor, RecordingColumn.RECORDING_PATH);
-			cursor.close();
 			try {
 				mediaPlayer.setDataSource(recPath);
 				mediaPlayer.setOnPreparedListener(player -> {
@@ -169,7 +150,38 @@ public class RecordingPlayer extends Activity implements OnSeekBarChangeListener
 		}
 	}
 	
+    @Override public void onConfigurationChanged(Configuration configuration) {
+        super.onConfigurationChanged(configuration);
+        if (mediaPlayer != null && !isFinishing()) initGui();
+    }
+
+    private void initGui() {
+        setContentView(R.layout.recording_player);
+        SceneWindow.fitSystemBars(this);
+        displaySceneInfo(sceneId);
+        seekBar = (SeekBar) findViewById(R.id.recording_play_seekbar);
+        seekBar.setMax(prepared ? mediaPlayer.getDuration() : (int) recordingDuration);
+        seekBar.setProgress(prepared ? mediaPlayer.getCurrentPosition() : 0);
+        seekBar.setOnSeekBarChangeListener(this);
+        descriptionView = (TextView) findViewById(R.id.recording_play_description_text);
+        descriptionView.setText(description);
+        ((TextView) findViewById(R.id.recording_play_duration_text)).setText(
+                DateFormat.format(getString(R.string.duration_format), recordingDuration));
+        ((TextView) findViewById(R.id.recording_play_date_text)).setText(
+                DateFormat.format(getString(R.string.date_format), recordingTime));
+        playButton = (ToggleButton) findViewById(R.id.recording_play_play_button);
+        playButton.setChecked(prepared && mediaPlayer.isPlaying());
+        playButton.setEnabled(prepared);
+        playButton.setOnCheckedChangeListener(this);
+        sceneButton = (ImageButton) findViewById(R.id.recording_play_scene_button);
+        sceneButton.setOnClickListener(this);
+        sceneButton.setEnabled(sceneAvailable);
+        editButton = (ImageButton) findViewById(R.id.recording_play_rename_button);
+        editButton.setOnClickListener(this);
+    }
+
 	private void displaySceneInfo(long sceneId) {
+        sceneAvailable = false;
 		Cursor cursor = db.getScene(sceneId);
 		if (cursor != null && cursor.moveToFirst()) {
             sceneAvailable = true;

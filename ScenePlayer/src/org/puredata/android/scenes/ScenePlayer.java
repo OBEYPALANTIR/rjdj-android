@@ -11,7 +11,7 @@ package org.puredata.android.scenes;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.puredata.android.scenes.SceneDataBase.SceneColumn;
@@ -26,6 +26,9 @@ import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.net.Uri;
+import android.provider.Settings;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
@@ -76,6 +79,7 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
     private Thread preparation;
     private AudioManager audioManager;
     private AudioFocusRequest focus;
+    private final Map<String, Overlay> overlays = new LinkedHashMap<>();
     private final BroadcastReceiver noisy = new BroadcastReceiver() {
         @Override public void onReceive(Context context, Intent intent) { stopAudio(); }
     };
@@ -125,8 +129,6 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 	}
 
 	private final PdListener overlayListener = new PdListener.Adapter() {
-
-		private final Map<String, Overlay> overlays = new HashMap<String, Overlay>();
 
 		@Override
 		public void receiveList(String source, Object... args) {
@@ -243,7 +245,6 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 	}
 
     private void initPdService() {
-        play.setEnabled(false);
         preparation = new Thread(() -> {
             try {
                 final File copy = ScenePlayback.prepare(sceneFolder, getCacheDir());
@@ -317,6 +318,11 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 
     @Override protected void onResume() { super.onResume(); resumed = true; }
 
+    @Override public void onConfigurationChanged(Configuration configuration) {
+        super.onConfigurationChanged(configuration);
+        if (sceneFolder != null && !destroyed) initGui();
+    }
+
     @Override protected void onStop() {
         super.onStop();
         if (isFinishing()) stopAudio();
@@ -327,8 +333,13 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
         if (requestCode == MICROPHONE_REQUEST) {
             wantsPlayback = false;
             play.setChecked(false);
-            toast(results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED
-                    ? "Microphone allowed. Tap Play to start." : "Microphone is required. Tap Play to try again.");
+            boolean granted = checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+            if (results.length > 0) getPreferences(MODE_PRIVATE).edit().putBoolean("microphoneDenied", !granted).apply();
+            if (!granted && results.length > 0 && !shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
+                showMicrophoneSettings();
+            } else {
+                toast(granted ? "Microphone allowed. Tap Play to start." : "Microphone is required. Tap Play to try again.");
+            }
         }
     }
 
@@ -352,11 +363,13 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 		sceneView = (SceneView) findViewById(R.id.sceneplayer_pic);
 		sceneView.setOnTouchListener(this);
 		sceneView.setImageBitmap(BitmapFactory.decodeFile(new File(sceneFolder, "image.jpg").getAbsolutePath()));
+		for (Overlay overlay : overlays.values()) sceneView.addOverlay(overlay);
 		play = (ToggleButton) findViewById(R.id.sceneplayer_pause);
-		play.setChecked(false);
+		play.setChecked(wantsPlayback || (pdService != null && pdService.isRunning()));
+        play.setEnabled(playbackFolder != null);
 		play.setOnClickListener(this);
 		record = (ToggleButton) findViewById(R.id.sceneplayer_record);
-		record.setChecked(false);
+		record.setChecked(recFile != null);
 		record.setOnClickListener(this);
 		info = (ImageButton) findViewById(R.id.sceneplayer_info);
 		info.setOnClickListener(this);
@@ -416,14 +429,22 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 		if (recFile == null) return;
 		PdBase.sendMessage(TRANSPORT, "record", 0);
 		long duration = System.currentTimeMillis() - recStart;
-		db.addRecording(recFile, recStart, duration, 0.0, 0.0, sceneId);
+        long recordingId = db.addRecording(recFile, recStart, duration, 0.0, 0.0, sceneId);
         record.setChecked(false);
 		recFile = null;
-		post("Finished recording");
+        if (recordingId < 0) toast(getString(R.string.recording_not_saved));
+        else post("Finished recording");
 	}
 
     private void startAudio() {
         if (destroyed || !resumed || playbackFolder == null) { play.setChecked(false); return; }
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+                && getPreferences(MODE_PRIVATE).getBoolean("microphoneDenied", false)
+                && !shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
+            play.setChecked(false);
+            showMicrophoneSettings();
+            return;
+        }
         if (android.os.Build.VERSION.SDK_INT >= 33
                 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
                 && !getPreferences(MODE_PRIVATE).getBoolean("notificationRequested", false)) {
@@ -465,6 +486,19 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
         } catch (IOException | RuntimeException e) {
             stopAudio(); toast("Unable to start microphone audio: " + e.getMessage());
         }
+    }
+
+    private void showMicrophoneSettings() {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.microphone_access)
+                .setMessage(R.string.microphone_settings_message)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.open_settings, (dialog, which) -> {
+                    try {
+                        startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:" + getPackageName())));
+                    } catch (RuntimeException e) { toast(getString(R.string.settings_unavailable)); }
+                }).show();
     }
 
     private void stopAudio() {

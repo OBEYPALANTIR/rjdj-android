@@ -90,6 +90,32 @@ public class SceneDataBase {
 		db.close();
 	}
 
+    public void recoverScenes() throws IOException {
+        // Share the importer lock so recovery never removes an extraction in progress.
+        synchronized (SceneArchive.class) {
+            File[] folders = scenesRoot.listFiles();
+            if (folders == null) throw new IOException("Cannot inspect scene storage");
+            IOException failure = null;
+            for (File folder : folders) {
+                try {
+                    if (folder.getName().startsWith(".import-")) {
+                        SceneArchive.deleteOwnedTree(scenesRoot, folder);
+                    } else if (folder.isDirectory() && folder.getName().endsWith(".rj")) {
+                        SceneArchive.requireOwned(scenesRoot, folder);
+                        SceneArchive.requireOwned(folder, new File(folder, "_main.pd"));
+                        SceneArchive.requireOwned(folder, new File(folder, "Info.plist"));
+                        if (!new File(folder, "_main.pd").isFile()) throw new IOException("Scene is missing _main.pd");
+                        addScene(folder);
+                    }
+                } catch (IOException e) {
+                    if (failure == null) failure = e;
+                    else failure.addSuppressed(e);
+                }
+            }
+            if (failure != null) throw failure;
+        }
+    }
+
 	public long addScene(File sceneFolder) throws IOException {
 		try (Cursor existing = db.query(TABLE_SCENES, new String[] { SceneColumn.ID.label },
 				SceneColumn.SCENE_DIRECTORY.label + " = ?", new String[] { sceneFolder.getAbsolutePath() },
@@ -110,6 +136,8 @@ public class SceneDataBase {
 	}
 	
 	public long addRecording(String path, long time, long duration, double longitude, double latitude, long sceneId) {
+		File recording = new File(path);
+		if (!recording.isFile() || recording.length() == 0) return -1;
 		ContentValues values = new ContentValues();
 		values.put(RecordingColumn.RECORDING_PATH.label, path);
 		values.put(RecordingColumn.RECORDING_TIMESTAMP.label, time);

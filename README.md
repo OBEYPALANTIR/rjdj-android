@@ -4,11 +4,13 @@ An independent revival of reactive music scenes for Android 17 (API 37), built f
 
 ## Use
 
-Open a scene, put on headphones and tap **Play**. Grant microphone permission, then tap Play again. Touch the artwork or move the phone to interact with patches that support those inputs. Microphone level controls the live input.
+Open a scene, put on headphones and tap **Play**. Grant microphone permission, then tap Play again. If Android stops showing the permission prompt after repeated denials, use **Open settings** to allow the microphone, return and tap Play. Touch the artwork or move the phone to interact with patches that support those inputs. Microphone level controls the live input.
 
 **Record** saves stereo scene output in the app's private storage. Listen and rename it in the **Recordings** tab. Playback continues in a microphone/media foreground service when the screen turns off. Pause, Back, audio focus loss or headphone disconnection stops capture. Notification permission enables the return-to-scene notification.
 
-The players keep their live audio and recording state during rotation and window resizing. Their flexible views remeasure in place; there are no alternate orientation layouts to reload. Other configuration changes can still recreate an activity.
+The players keep their audio and recording state during rotation, window resizing, theme, language, display density, font size/weight and keyboard/navigation changes. Controls and overlays reload with the updated resources without reopening the audio engine. Process death and unhandled system configuration changes can still end playback.
+
+Startup recovers scenes published before an interrupted database registration and removes abandoned import staging. Playback reclaims abandoned private cache copies while preserving copies still in use. A recording appears in the library only when the scene produced a nonempty file.
 
 **Import a scene** opens Android's document picker. Choose a ZIP-format `.rj`, `.rjz` or `.zip` containing exactly one `.rj` folder with `_main.pd` and `Info.plist`. Scene files remain intact; playback uses a temporary copy with Android host bridges. Imports are limited to 4,096 entries, 64 MiB per file and 256 MiB total. Duplicate folder names are rejected without overwriting scenes.
 

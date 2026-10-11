@@ -32,12 +32,12 @@
         <activity
             android:label="@string/app_name"
             android:name=".RecordingPlayer"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode|density|fontScale|fontWeightAdjustment|locale|layoutDirection|keyboard|keyboardHidden|navigation"
             android:theme="@style/FullScreen.DisableSoundEffects" />
         <activity
             android:label="@string/app_name"
             android:name=".ScenePlayer"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode|density|fontScale|fontWeightAdjustment|locale|layoutDirection|keyboard|keyboardHidden|navigation"
             android:theme="@style/FullScreen.DisableSoundEffects" />
 
         <service android:name="org.puredata.android.service.PdService" android:exported="false"
