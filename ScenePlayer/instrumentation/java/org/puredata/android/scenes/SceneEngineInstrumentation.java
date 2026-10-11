@@ -45,10 +45,17 @@ public final class SceneEngineInstrumentation extends Instrumentation {
                 require(sceneCount(database) == before + 1, "recovery is idempotent");
                 require(database.addScene(scene) == id, "interrupted registration recovers without duplicate row");
                 require(new File(scene, "_main.pd").isFile(), "registration preserves scene");
+                File mainPatch = new File(scene, "_main.pd");
+                File savedPatch = new File(work, "saved-main.pd");
+                require(mainPatch.renameTo(savedPatch), "interrupted scene deletion fixture");
+                database.recoverScenes();
+                require(sceneCount(database) == before + 1, "registered partial scene does not block recovery");
+                require(savedPatch.renameTo(mainPatch), "restore registered fixture");
                 require(database.addRecording(recording.getPath(), 0, 0, 0, 0, id) < 0, "missing recording is not registered");
                 Files.createDirectories(recording.getParentFile().toPath());
                 Files.createFile(recording.toPath());
                 require(database.addRecording(recording.getPath(), 0, 0, 0, 0, id) < 0, "empty recording is not registered");
+                require(!recording.exists(), "rejected empty recording is removed");
                 Files.write(recording.toPath(), new byte[] {1, 2});
                 recordingId = database.addRecording(recording.getPath(), 0, 1, 0, 0, id);
                 require(recordingId >= 0, "nonempty recording is registered");

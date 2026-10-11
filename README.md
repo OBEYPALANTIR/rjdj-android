@@ -10,7 +10,7 @@ Open a scene, put on headphones and tap **Play**. Grant microphone permission, t
 
 The players keep their audio and recording state during rotation, window resizing, theme, language, display density, font size/weight and keyboard/navigation changes. Controls and overlays reload with the updated resources without reopening the audio engine. Process death and unhandled system configuration changes can still end playback.
 
-Startup recovers scenes published before an interrupted database registration and removes abandoned import staging. Playback reclaims abandoned private cache copies while preserving copies still in use. A recording appears in the library only when the scene produced a nonempty file.
+Startup recovers scenes published before an interrupted database registration and removes abandoned import staging. A damaged scene cannot block importing other scenes. Playback reclaims abandoned private cache copies while preserving copies still in use. A recording appears in the library only when the scene produced a nonempty file; rejected empty files are removed.
 
 **Import a scene** opens Android's document picker. Choose a ZIP-format `.rj`, `.rjz` or `.zip` containing exactly one `.rj` folder with `_main.pd` and `Info.plist`. Scene files remain intact; playback uses a temporary copy with Android host bridges. Imports are limited to 4,096 entries, 64 MiB per file and 256 MiB total. Duplicate folder names are rejected without overwriting scenes.
 

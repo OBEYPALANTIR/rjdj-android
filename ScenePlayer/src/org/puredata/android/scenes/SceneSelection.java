@@ -23,6 +23,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -213,7 +214,7 @@ public class SceneSelection extends Activity implements OnItemClickListener, OnI
                 recovery = new SceneDataBase(context);
                 recovery.recoverScenes();
             } catch (Exception e) {
-                return "Unable to restore scene library: " + e.getMessage();
+                Log.w(TAG, "Unable to restore every scene; continuing requested import", e);
             } finally {
                 if (recovery != null) recovery.close();
             }
