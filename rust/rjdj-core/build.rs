@@ -144,6 +144,10 @@ fn main() {
             println!("cargo:rustc-link-lib=log");
             export_pd_api_for_externals();
         }
+        // glibc's endian.h satisfies m_private_utils.h on Linux hosts (CI runs the host tests there).
+        Ok("linux") => {
+            build.define("HAVE_ENDIAN_H", None);
+        }
         Ok("macos") => {
             // Pd's endian helpers require the BSD header on macOS, not Linux's endian.h.
             build
