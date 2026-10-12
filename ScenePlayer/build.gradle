@@ -193,7 +193,7 @@ abstract class GenerateNoticesTask extends DefaultTask {
         add('Rust crates', 'Versions and declared SPDX licenses below are resolved from Cargo.lock for aarch64-linux-android, including build-time dependencies. MIT is selected where offered; otherwise Apache-2.0 or Zlib applies. Required Unicode-3.0 terms are also reproduced. Shared MIT and Apache-2.0 terms appear once; crate-specific copyright preambles remain below.')
         def core = metadata.packages.find { it.name == 'rjdj-core' && it.source == null }
         add("${core.name} ${core.version}: ${core.license}",
-                'SPDX license declared in Cargo.toml. Its license file is to be added by the owner; no copyright holder is attributed here.')
+                new File(root, 'rust/rjdj-core/LICENSE').getText('UTF-8'))
         def mitText = supplemental.split('=== MIT ===\n', 2)[1].split('\n\n=== Apache-2.0 ===', 2)[0]
         def mitBody = mitText.substring(mitText.indexOf('Permission is hereby granted'))
         def normalize = { String text -> text.replaceAll(/\s+/, ' ').trim() }
