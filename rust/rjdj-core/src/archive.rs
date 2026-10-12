@@ -20,6 +20,8 @@ pub const MAX_TOTAL_BYTES: u64 = 256 * 1024 * 1024;
 pub const MAX_ARCHIVE_BYTES: u64 = 320 * 1024 * 1024;
 const ONE_SCENE: &str = "Archive must contain exactly one .rj scene";
 const TOO_LARGE: &str = "Archive is too large to import";
+// Local-header offset, compressed size and CRC32.
+type CentralEntry = (u64, u64, u32);
 
 /// Imports a document stream without replacing an existing scene.
 pub fn import_scene(input: impl Read, root: &Path) -> Result<PathBuf> {
@@ -99,8 +101,7 @@ fn stage(root: &Path) -> Result<PathBuf> {
 }
 
 fn extract(spool: &mut File, staging: &Path) -> Result<()> {
-    let (start, count) = find_central_directory(spool)?;
-    let mut entries = check_central_entries(spool, start, count)?;
+    let mut entries = find_central_directory(spool)?;
     entries.sort_unstable_by_key(|entry| entry.0);
     let mut paths = HashSet::new();
     let mut total = 0u64;
@@ -183,7 +184,7 @@ fn validate_name(name: &str) -> Result<()> {
     Ok(())
 }
 
-fn find_central_directory(spool: &mut File) -> Result<(u64, u64)> {
+fn find_central_directory(spool: &mut File) -> Result<Vec<CentralEntry>> {
     let length = spool.seek(SeekFrom::End(0))?;
     let mut buffer = [0; 8192];
     let mut end = length;
@@ -196,13 +197,17 @@ fn find_central_directory(spool: &mut File) -> Result<(u64, u64)> {
             if magic != b"PK\x05\x06" {
                 continue;
             }
-            if let Some((directory, count)) =
+            if let Some((directory, count, directory_end)) =
                 central_directory_at(spool, start + offset as u64, length)
             {
                 if count > MAX_ENTRIES as u64 {
                     return Err(CoreError::new("Archive contains too many entries"));
                 }
-                return Ok((directory, count));
+                if let Some(entries) =
+                    check_central_entries(spool, directory, count, directory_end)?
+                {
+                    return Ok(entries);
+                }
             }
         }
         if start == 0 {
@@ -217,7 +222,7 @@ fn central_directory_at(
     spool: &mut (impl Read + Seek),
     position: u64,
     length: u64,
-) -> Option<(u64, u64)> {
+) -> Option<(u64, u64, u64)> {
     if length.checked_sub(position)? < 22 {
         return None;
     }
@@ -259,10 +264,12 @@ fn central_directory_at(
             let on_disk = u64::from_le_bytes(record[24..32].try_into().ok()?);
             let total = u64::from_le_bytes(record[32..40].try_into().ok()?);
             let directory = u64::from_le_bytes(record[48..56].try_into().ok()?);
-            if record_position < directory.saturating_add(total.saturating_mul(46)) {
+            if on_disk != total
+                || record_position < directory.saturating_add(total.saturating_mul(46))
+            {
                 return None;
             }
-            return Some((directory, total.max(on_disk)));
+            return Some((directory, total, record_position));
         }
     }
     let directory = u32::from_le_bytes(header[16..20].try_into().ok()?) as u64;
@@ -272,96 +279,112 @@ fn central_directory_at(
     let mut magic = [0; 4];
     spool.seek(SeekFrom::Start(directory)).ok()?;
     spool.read_exact(&mut magic).ok()?;
-    (magic == *b"PK\x01\x02").then_some((directory, u64::from(total.max(on_disk))))
+    (magic == *b"PK\x01\x02").then_some((directory, u64::from(total.max(on_disk)), position))
 }
 
 fn check_central_entries(
     spool: &mut File,
     start: u64,
     declared_count: u64,
-) -> Result<Vec<(u64, u64, u32)>> {
-    spool.seek(SeekFrom::Start(start))?;
-    let length = spool.metadata()?.len();
+    end: u64,
+) -> Result<Option<Vec<CentralEntry>>> {
+    if spool.seek(SeekFrom::Start(start)).is_err() {
+        return Ok(None);
+    }
     let mut names = HashSet::new();
+    let mut duplicate = false;
     let mut entries = Vec::with_capacity(declared_count.min(MAX_ENTRIES as u64) as usize);
-    for _ in 0..declared_count {
+    let mut position = start;
+    loop {
+        let mut magic = [0; 4];
+        if spool.read_exact(&mut magic).is_err() {
+            return Ok(None);
+        }
+        if magic != *b"PK\x01\x02" {
+            if position != end || entries.len() as u64 != declared_count {
+                return Ok(None);
+            }
+            if duplicate {
+                return Err(CoreError::new("Duplicate archive entry"));
+            }
+            return Ok(Some(entries));
+        }
         if entries.len() == MAX_ENTRIES {
             return Err(CoreError::new("Archive contains too many entries"));
         }
-        let mut magic = [0; 4];
-        spool
-            .read_exact(&mut magic)
-            .map_err(|_| CoreError::new(ONE_SCENE))?;
-        if magic != *b"PK\x01\x02" {
-            return Err(CoreError::new(ONE_SCENE));
-        }
-        let mut header = [0; 42];
-        spool
-            .read_exact(&mut header)
-            .map_err(|_| CoreError::new(ONE_SCENE))?;
-        let name_length = u16::from_le_bytes([header[24], header[25]]) as usize;
-        let extra_length = u16::from_le_bytes([header[26], header[27]]) as u64;
-        let comment_length = u16::from_le_bytes([header[28], header[29]]) as u64;
-        let mut name = vec![0; name_length];
-        spool
-            .read_exact(&mut name)
-            .map_err(|_| CoreError::new(ONE_SCENE))?;
-        if !names.insert(name) {
-            return Err(CoreError::new("Duplicate archive entry"));
-        }
-        let crc = u32::from_le_bytes([header[12], header[13], header[14], header[15]]);
-        let mut fields = [0; 3]; // Uncompressed size, compressed size, local-header offset.
-        for (field, offset) in fields.iter_mut().zip([20, 16, 38]) {
-            let mut bytes = [0; 4];
-            bytes.copy_from_slice(&header[offset..offset + 4]);
-            *field = u32::from_le_bytes(bytes) as u64;
-        }
-        let mut extra_position = spool.stream_position()?;
-        let extra_end = extra_position + extra_length;
-        if extra_end + comment_length > length {
-            return Err(CoreError::new(ONE_SCENE));
-        }
-        if fields.contains(&(u32::MAX as u64)) {
-            let mut found = false;
-            while extra_position + 4 <= extra_end {
-                let mut extra = [0; 4];
-                spool
-                    .read_exact(&mut extra)
-                    .map_err(|_| CoreError::new(ONE_SCENE))?;
-                let size = u16::from_le_bytes([extra[2], extra[3]]) as u64;
-                let field_end = extra_position + 4 + size;
-                if field_end > extra_end {
-                    return Err(CoreError::new(ONE_SCENE));
-                }
-                if extra[..2] == [1, 0] {
-                    let mut position = extra_position + 4;
-                    for field in &mut fields {
-                        if *field == u32::MAX as u64 {
-                            if position + 8 > field_end {
-                                return Err(CoreError::new(ONE_SCENE));
-                            }
-                            let mut bytes = [0; 8];
-                            spool
-                                .read_exact(&mut bytes)
-                                .map_err(|_| CoreError::new(ONE_SCENE))?;
-                            *field = u64::from_le_bytes(bytes);
-                            position += 8;
-                        }
-                    }
-                    found = true;
-                    break;
-                }
-                spool.seek(SeekFrom::Start(field_end))?;
-                extra_position = field_end;
-            }
-            if !found {
-                return Err(CoreError::new(ONE_SCENE));
-            }
-        }
-        spool.seek(SeekFrom::Start(extra_end + comment_length))?;
-        entries.push((fields[2], fields[1], crc));
+        let Some((name, entry, next)) = central_entry_at(spool, position, end) else {
+            return Ok(None);
+        };
+        // Only report duplicate names once this candidate's count and boundary are valid.
+        duplicate |= !names.insert(name);
+        entries.push(entry);
+        position = next;
     }
-    Ok(entries)
+}
+
+fn central_entry_at(
+    spool: &mut File,
+    position: u64,
+    end: u64,
+) -> Option<(Vec<u8>, CentralEntry, u64)> {
+    if end.checked_sub(position)? < 46 {
+        return None;
+    }
+    let mut header = [0; 42];
+    spool.read_exact(&mut header).ok()?;
+    let name_length = u16::from_le_bytes([header[24], header[25]]) as usize;
+    let extra_length = u16::from_le_bytes([header[26], header[27]]) as u64;
+    let comment_length = u16::from_le_bytes([header[28], header[29]]) as u64;
+    let mut extra_position = position + 46 + name_length as u64;
+    let extra_end = extra_position + extra_length;
+    let next = extra_end + comment_length;
+    if next > end {
+        return None;
+    }
+    let mut name = vec![0; name_length];
+    spool.read_exact(&mut name).ok()?;
+    let crc = u32::from_le_bytes([header[12], header[13], header[14], header[15]]);
+    let mut fields = [0; 3]; // Uncompressed size, compressed size, local-header offset.
+    for (field, offset) in fields.iter_mut().zip([20, 16, 38]) {
+        let mut bytes = [0; 4];
+        bytes.copy_from_slice(&header[offset..offset + 4]);
+        *field = u32::from_le_bytes(bytes) as u64;
+    }
+    if fields.contains(&(u32::MAX as u64)) {
+        let mut found = false;
+        while extra_position + 4 <= extra_end {
+            let mut extra = [0; 4];
+            spool.read_exact(&mut extra).ok()?;
+            let size = u16::from_le_bytes([extra[2], extra[3]]) as u64;
+            let field_end = extra_position + 4 + size;
+            if field_end > extra_end {
+                return None;
+            }
+            if extra[..2] == [1, 0] {
+                let mut position = extra_position + 4;
+                for field in &mut fields {
+                    if *field == u32::MAX as u64 {
+                        if position + 8 > field_end {
+                            return None;
+                        }
+                        let mut bytes = [0; 8];
+                        spool.read_exact(&mut bytes).ok()?;
+                        *field = u64::from_le_bytes(bytes);
+                        position += 8;
+                    }
+                }
+                found = true;
+                break;
+            }
+            spool.seek(SeekFrom::Start(field_end)).ok()?;
+            extra_position = field_end;
+        }
+        if !found {
+            return None;
+        }
+    }
+    spool.seek(SeekFrom::Start(next)).ok()?;
+    Some((name, (fields[2], fields[1], crc), next))
 }
 
 fn find_scenes(folder: &Path, scenes: &mut Vec<PathBuf>) -> Result<()> {

@@ -256,27 +256,103 @@ fn classic_declared_entry_count_is_rejected_before_central_records_are_read() {
 #[test]
 fn zip64_declared_entry_count_is_rejected_before_central_records_are_read() {
     for classic_count in [0, u16::MAX] {
-        for field in [24, 32] {
-            let record_position = 46 * (MAX_ENTRIES + 1);
-            let mut bytes = vec![0; record_position + 98];
-            bytes[..4].copy_from_slice(b"PK\x01\x02");
-            let record = &mut bytes[record_position..record_position + 56];
-            record[..4].copy_from_slice(b"PK\x06\x06");
-            record[4..12].copy_from_slice(&44u64.to_le_bytes());
-            record[field..field + 8]
-                .copy_from_slice(&((MAX_ENTRIES + 1) as u64).to_le_bytes());
-            let locator = &mut bytes[record_position + 56..record_position + 76];
-            locator[..4].copy_from_slice(b"PK\x06\x07");
-            locator[8..16].copy_from_slice(&(record_position as u64).to_le_bytes());
-            locator[16..20].copy_from_slice(&1u32.to_le_bytes());
-            let footer = &mut bytes[record_position + 76..];
-            footer[..4].copy_from_slice(b"PK\x05\x06");
-            footer[8..10].copy_from_slice(&classic_count.to_le_bytes());
-            footer[10..12].copy_from_slice(&classic_count.to_le_bytes());
-            footer[12..20].fill(0xff);
-            // The count fits the ZIP64 directory span, but no complete entry exists.
-            rejected(&bytes, "Archive contains too many entries");
-        }
+        let record_position = 46 * (MAX_ENTRIES + 1);
+        let mut bytes = vec![0; record_position + 98];
+        bytes[..4].copy_from_slice(b"PK\x01\x02");
+        let record = &mut bytes[record_position..record_position + 56];
+        record[..4].copy_from_slice(b"PK\x06\x06");
+        record[4..12].copy_from_slice(&44u64.to_le_bytes());
+        record[24..32].copy_from_slice(&((MAX_ENTRIES + 1) as u64).to_le_bytes());
+        record[32..40].copy_from_slice(&((MAX_ENTRIES + 1) as u64).to_le_bytes());
+        let locator = &mut bytes[record_position + 56..record_position + 76];
+        locator[..4].copy_from_slice(b"PK\x06\x07");
+        locator[8..16].copy_from_slice(&(record_position as u64).to_le_bytes());
+        locator[16..20].copy_from_slice(&1u32.to_le_bytes());
+        let footer = &mut bytes[record_position + 76..];
+        footer[..4].copy_from_slice(b"PK\x05\x06");
+        footer[8..10].copy_from_slice(&classic_count.to_le_bytes());
+        footer[10..12].copy_from_slice(&classic_count.to_le_bytes());
+        footer[12..20].fill(0xff);
+        // Consistent ZIP64 counts fit the directory span, but no complete entry exists.
+        rejected(&bytes, "Archive contains too many entries");
+    }
+}
+#[test]
+fn classic_footer_comment_retries_after_directory_decode_or_boundary_mismatch() {
+    for count in [3u16, 2, 1] {
+        let work = Work::new();
+        let mut bytes = valid();
+        let footer = bytes.len() - 22;
+        let mut comment = bytes[footer..].to_vec();
+        comment[8..10].copy_from_slice(&count.to_le_bytes());
+        comment[10..12].copy_from_slice(&count.to_le_bytes());
+        bytes[footer + 20..footer + 22].copy_from_slice(&22u16.to_le_bytes());
+        bytes.extend_from_slice(&comment);
+        let imported = import_scene(bytes.as_slice(), &work.root()).unwrap();
+        assert_eq!(fs::read(imported.join("_main.pd")).unwrap(), b"patch");
+        assert_eq!(fs::read(imported.join("Info.plist")).unwrap(), INFO.as_bytes());
+    }
+}
+#[test]
+fn zip64_footer_comment_count_mismatch_preserves_all_scene_assets() {
+    for (on_disk, total) in [(2u64, 1u64), (1, 2), ((MAX_ENTRIES + 1) as u64, 1)] {
+        let work = Work::new();
+        let mut bytes = archive(&[
+            ("Test.rj/_main.pd", b"patch"),
+            ("Test.rj/Info.plist", INFO.as_bytes()),
+            ("Test.rj/sample.wav", b"required sample"),
+        ]);
+        let record_position = bytes.len() as u64;
+        let footer = bytes.len() - 22;
+        let directory = u32::from_le_bytes(bytes[footer + 16..footer + 20].try_into().unwrap());
+        let size = u32::from_le_bytes(bytes[footer + 12..footer + 16].try_into().unwrap());
+        bytes[footer + 20..footer + 22].copy_from_slice(&98u16.to_le_bytes());
+        let mut record = [0; 56];
+        record[..4].copy_from_slice(b"PK\x06\x06");
+        record[4..12].copy_from_slice(&44u64.to_le_bytes());
+        record[24..32].copy_from_slice(&on_disk.to_le_bytes());
+        record[32..40].copy_from_slice(&total.to_le_bytes());
+        record[40..48].copy_from_slice(&u64::from(size).to_le_bytes());
+        record[48..56].copy_from_slice(&u64::from(directory).to_le_bytes());
+        bytes.extend_from_slice(&record);
+        let mut locator = [0; 20];
+        locator[..4].copy_from_slice(b"PK\x06\x07");
+        locator[8..16].copy_from_slice(&record_position.to_le_bytes());
+        locator[16..20].copy_from_slice(&1u32.to_le_bytes());
+        bytes.extend_from_slice(&locator);
+        let mut comment = [0; 22];
+        comment[..4].copy_from_slice(b"PK\x05\x06");
+        comment[8..20].fill(0xff);
+        bytes.extend_from_slice(&comment);
+        let imported = import_scene(bytes.as_slice(), &work.root()).unwrap();
+        assert_eq!(fs::read(imported.join("sample.wav")).unwrap(), b"required sample");
+        assert_eq!(fs::read(imported.join("_main.pd")).unwrap(), b"patch");
+    }
+}
+#[test]
+fn underdeclared_directory_cannot_hide_the_actual_entry_limit_or_retry_older_footers() {
+    let mut zip = ZipWriter::new(Cursor::new(Vec::new()));
+    zip.start_file("Test.rj/_main.pd", options()).unwrap();
+    zip.write_all(b"patch").unwrap();
+    zip.start_file("Test.rj/Info.plist", options()).unwrap();
+    zip.write_all(INFO.as_bytes()).unwrap();
+    zip.start_file("Test.rj/sample.wav", options()).unwrap();
+    zip.write_all(b"required sample").unwrap();
+    for i in 3..=MAX_ENTRIES {
+        zip.start_file(format!("Test.rj/{i:08}"), options()).unwrap();
+    }
+    let archive = zip.finish().unwrap().into_inner();
+    for prefix in [Vec::new(), valid()] {
+        let mut bytes = archive.clone();
+        let footer = bytes.len() - 22;
+        let directory = u32::from_le_bytes(bytes[footer + 16..footer + 20].try_into().unwrap());
+        bytes[footer + 8..footer + 10].copy_from_slice(&2u16.to_le_bytes());
+        bytes[footer + 10..footer + 12].copy_from_slice(&2u16.to_le_bytes());
+        bytes[footer + 16..footer + 20]
+            .copy_from_slice(&(directory + prefix.len() as u32).to_le_bytes());
+        let mut combined = prefix;
+        combined.extend_from_slice(&bytes);
+        rejected(&combined, "Archive contains too many entries");
     }
 }
 #[test]
