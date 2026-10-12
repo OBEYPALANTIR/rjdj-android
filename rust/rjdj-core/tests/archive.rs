@@ -532,6 +532,59 @@ fn invalid_optional_zip64_locator_in_a_central_comment_keeps_classic_import() {
     assert_eq!(fs::read(imported.join("Info.plist")).unwrap(), INFO.as_bytes());
 }
 #[test]
+fn optional_zip64_directory_failure_in_a_central_comment_retries_same_classic_footer() {
+    for required in [false, true] {
+        let mut bytes = valid();
+        let footer = bytes.len() - 22;
+        let directory =
+            u32::from_le_bytes(bytes[footer + 16..footer + 20].try_into().unwrap()) as usize;
+        let size = u32::from_le_bytes(bytes[footer + 12..footer + 16].try_into().unwrap());
+        let name =
+            u16::from_le_bytes(bytes[directory + 28..directory + 30].try_into().unwrap()) as usize;
+        let extra =
+            u16::from_le_bytes(bytes[directory + 30..directory + 32].try_into().unwrap()) as usize;
+        let comment =
+            u16::from_le_bytes(bytes[directory + 32..directory + 34].try_into().unwrap()) as usize;
+        let last = directory + 46 + name + extra + comment;
+        let previous = u16::from_le_bytes(bytes[last + 32..last + 34].try_into().unwrap());
+        bytes[last + 32..last + 34].copy_from_slice(&(previous + 76).to_le_bytes());
+        let mut classic = bytes.split_off(footer);
+        // Matching counts/offsets pass fixed checks, but this chain is inside the file comment.
+        append_zip64_footer(&mut bytes, &classic, 0);
+        classic[12..16].copy_from_slice(&(size + 76).to_le_bytes());
+        if required {
+            classic[8..20].fill(0xff);
+        }
+        bytes.extend_from_slice(&classic);
+        if required {
+            rejected(&bytes, ONE_SCENE);
+        } else {
+            let work = Work::new();
+            let imported = import_scene(bytes.as_slice(), &work.root()).unwrap();
+            assert_eq!(fs::read(imported.join("_main.pd")).unwrap(), b"patch");
+            assert_eq!(fs::read(imported.join("Info.plist")).unwrap(), INFO.as_bytes());
+            assert_eq!(names(&work.root()), vec!["Test.rj"]);
+        }
+    }
+}
+#[test]
+fn optional_zip64_directory_failure_in_signature_payload_retries_same_classic_footer() {
+    let work = Work::new();
+    let mut bytes = directory_signed_archive(b"", false);
+    let footer = bytes.len() - 22;
+    let size = u32::from_le_bytes(bytes[footer + 12..footer + 16].try_into().unwrap());
+    bytes[footer - 2..footer].copy_from_slice(&76u16.to_le_bytes());
+    let mut classic = bytes.split_off(footer);
+    append_zip64_footer(&mut bytes, &classic, 0);
+    classic[12..16].copy_from_slice(&(size + 76).to_le_bytes());
+    bytes.extend_from_slice(&classic);
+    let imported = import_scene(bytes.as_slice(), &work.root()).unwrap();
+    assert_eq!(fs::read(imported.join("_main.pd")).unwrap(), b"patch");
+    assert_eq!(fs::read(imported.join("Info.plist")).unwrap(), INFO.as_bytes());
+    assert_eq!(fs::read(imported.join("sample.wav")).unwrap(), b"required sample");
+    assert_eq!(names(&work.root()), vec!["Test.rj"]);
+}
+#[test]
 fn small_zip64_scene_with_classic_sentinels_and_entry_extras_is_accepted() {
     for extension in [0, 256, 65536] {
         for fields in [&[24, 20, 42][..], &[20][..], &[42][..], &[24][..]] {

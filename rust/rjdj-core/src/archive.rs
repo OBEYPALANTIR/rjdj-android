@@ -197,17 +197,10 @@ fn find_central_directory(spool: &mut File) -> Result<Vec<CentralEntry>> {
             if magic != b"PK\x05\x06" {
                 continue;
             }
-            if let Some((directory, count, directory_end)) =
-                central_directory_at(spool, start + offset as u64, length)
+            if let Some(entries) =
+                central_directory_at(spool, start + offset as u64, length)?
             {
-                if count > MAX_ENTRIES as u64 {
-                    return Err(CoreError::new("Archive contains too many entries"));
-                }
-                if let Some(entries) =
-                    check_central_entries(spool, directory, count, directory_end)?
-                {
-                    return Ok(entries);
-                }
+                return Ok(entries);
             }
         }
         if start == 0 {
@@ -222,35 +215,43 @@ fn central_directory_at(
     spool: &mut (impl Read + Seek),
     position: u64,
     length: u64,
-) -> Option<(u64, u64, u64)> {
-    if length.checked_sub(position)? < 22 {
-        return None;
+) -> Result<Option<Vec<CentralEntry>>> {
+    if length.saturating_sub(position) < 22 {
+        return Ok(None);
     }
     let mut header = [0; 22];
-    spool.seek(SeekFrom::Start(position)).ok()?;
-    spool.read_exact(&mut header).ok()?;
+    if spool.seek(SeekFrom::Start(position)).is_err() || spool.read_exact(&mut header).is_err() {
+        return Ok(None);
+    }
     let comment = u16::from_le_bytes([header[20], header[21]]) as u64;
     if header[..4] != *b"PK\x05\x06" || comment > length - position - 22 {
-        return None;
+        return Ok(None);
     }
     let on_disk = u16::from_le_bytes([header[8], header[9]]);
     let total = u16::from_le_bytes([header[10], header[11]]);
-    let may_be_zip64 =
+    let requires_zip64 =
         total == u16::MAX || header[12..16] == [0xff; 4] || header[16..20] == [0xff; 4];
-    if let Some(directory) = zip64_directory_at(spool, position) {
-        return Some(directory);
+    if let Some((directory, count, end)) = zip64_directory_at(spool, position) {
+        if let Some(entries) = check_central_entries(spool, directory, count, end)? {
+            return Ok(Some(entries));
+        }
     }
-    if may_be_zip64 {
-        return None;
+    // Optional ZIP64 metadata may be opaque comment/signature bytes; retry this classic footer.
+    if requires_zip64 {
+        return Ok(None);
     }
-    let directory = u32::from_le_bytes(header[16..20].try_into().ok()?) as u64;
+    let directory = u32::from_le_bytes([header[16], header[17], header[18], header[19]]) as u64;
     if header[4..6] != header[6..8] || directory >= position {
-        return None;
+        return Ok(None);
     }
     let mut magic = [0; 4];
-    spool.seek(SeekFrom::Start(directory)).ok()?;
-    spool.read_exact(&mut magic).ok()?;
-    (magic == *b"PK\x01\x02").then_some((directory, u64::from(total.max(on_disk)), position))
+    if spool.seek(SeekFrom::Start(directory)).is_err()
+        || spool.read_exact(&mut magic).is_err()
+        || magic != *b"PK\x01\x02"
+    {
+        return Ok(None);
+    }
+    check_central_entries(spool, directory, u64::from(total.max(on_disk)), position)
 }
 
 fn zip64_directory_at(
@@ -292,17 +293,20 @@ fn zip64_directory_at(
 }
 
 fn check_central_entries(
-    spool: &mut File,
+    spool: &mut (impl Read + Seek),
     start: u64,
     declared_count: u64,
     end: u64,
 ) -> Result<Option<Vec<CentralEntry>>> {
+    if declared_count > MAX_ENTRIES as u64 {
+        return Err(CoreError::new("Archive contains too many entries"));
+    }
     if spool.seek(SeekFrom::Start(start)).is_err() {
         return Ok(None);
     }
     let mut names = HashSet::new();
     let mut duplicate = false;
-    let mut entries = Vec::with_capacity(declared_count.min(MAX_ENTRIES as u64) as usize);
+    let mut entries = Vec::with_capacity(declared_count as usize);
     let mut position = start;
     loop {
         let mut magic = [0; 4];
@@ -343,7 +347,7 @@ fn check_central_entries(
 }
 
 fn central_entry_at(
-    spool: &mut File,
+    spool: &mut (impl Read + Seek),
     position: u64,
     end: u64,
 ) -> Option<(Vec<u8>, CentralEntry, u64)> {
@@ -558,5 +562,5 @@ fn mismatched_zip64_locator_is_checked_with_fixed_reads_only() {
     spool.trailer[28..40].fill(0xff);
     let position = spool.locator + 20;
     let length = position + 22;
-    assert_eq!(central_directory_at(&mut spool, position, length), None);
+    assert_eq!(central_directory_at(&mut spool, position, length).unwrap(), None);
 }
