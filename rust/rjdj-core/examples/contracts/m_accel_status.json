@@ -1,0 +1,70 @@
+{
+  "name": "m_accel_status",
+  "args": [],
+  "source": "rj/m_accel_status-help.pd:4-10 + rj/m_accel_status.pd:2-19",
+  "duration_ms": 500,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        1
+      ]
+    },
+    {
+      "receiver": "#accelerate",
+      "at_ms": 40,
+      "message": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "receiver": "#accelerate",
+      "at_ms": 80,
+      "message": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 300,
+      "message": [
+        0
+      ]
+    },
+    {
+      "receiver": "#accelerate",
+      "at_ms": 350,
+      "message": [
+        0,
+        0,
+        1
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "float",
+      "exact": [
+        [
+          1
+        ],
+        [
+          0
+        ]
+      ],
+      "range": [
+        0,
+        1
+      ]
+    }
+  ],
+  "notes": "Any enabled accelerometer sample emits activity1; repeated samples retrigger a150ms inactivity timer whilechange suppresses duplicate1. Then0 reports inactivity. Disabled receiver traffic does not reactivate it."
+}

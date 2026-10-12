@@ -1,0 +1,63 @@
+{
+  "name": "m_keyfollow",
+  "args": [],
+  "source": "rj/m_keyfollow-help.pd:18-20,34-42 + rj/m_keyfollow.pd:2-18,35-49",
+  "duration_ms": 300,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        1000
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 40,
+      "message": [
+        261
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 60,
+      "message": [
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 80,
+      "message": [
+        522
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 4,
+      "type": "float",
+      "exact": [
+        [
+          1000
+        ],
+        [
+          1000
+        ],
+        [
+          1000
+        ],
+        [
+          2000
+        ]
+      ],
+      "range": [
+        1000,
+        2000
+      ]
+    }
+  ],
+  "notes": "All inlets arehot. Default0% preserves1000Hz;261Hz reference also preserves it at100%; doubling key frequency to522Hz doubles the filter output to2000Hz via(freq/261)^(percent/100)."
+}

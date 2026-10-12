@@ -1,0 +1,67 @@
+{
+  "name": "r_#touch",
+  "args": [],
+  "source": "r/r_#touch-help.pd:20-45 + r/r_#touch.pd:2-4",
+  "duration_ms": 150,
+  "stimuli": [
+    {
+      "receiver": "#touch",
+      "at_ms": 20,
+      "message": [
+        "down",
+        1,
+        160,
+        160
+      ]
+    },
+    {
+      "receiver": "#touch",
+      "at_ms": 50,
+      "message": [
+        "xy",
+        1,
+        200,
+        120
+      ]
+    },
+    {
+      "receiver": "#touch",
+      "at_ms": 80,
+      "message": [
+        "up",
+        1,
+        200,
+        120
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 3,
+      "type": "any",
+      "exact": [
+        [
+          "down",
+          1,
+          160,
+          160
+        ],
+        [
+          "xy",
+          1,
+          200,
+          120
+        ],
+        [
+          "up",
+          1,
+          200,
+          120
+        ]
+      ]
+    }
+  ],
+  "notes": "No inlets: forwards complete down/xy/up touch messages from #touch, preserving selector, touch number and coordinates. These are host-injected events, not a touch-device test."
+}

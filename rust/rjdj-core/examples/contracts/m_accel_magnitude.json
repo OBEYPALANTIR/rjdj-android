@@ -1,0 +1,70 @@
+{
+  "name": "m_accel_magnitude",
+  "args": [],
+  "source": "rj/m_accel_magnitude-help.pd:7-10 + rj/m_accel_magnitude.pd:2-30",
+  "duration_ms": 300,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        1
+      ]
+    },
+    {
+      "receiver": "#accelerate",
+      "at_ms": 40,
+      "message": [
+        3,
+        4,
+        0
+      ]
+    },
+    {
+      "receiver": "#accelerate",
+      "at_ms": 60,
+      "message": [
+        1,
+        2,
+        2
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 80,
+      "message": [
+        0
+      ]
+    },
+    {
+      "receiver": "#accelerate",
+      "at_ms": 100,
+      "message": [
+        9,
+        9,
+        9
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "float",
+      "exact": [
+        [
+          5
+        ],
+        [
+          3
+        ]
+      ],
+      "range": [
+        3,
+        5
+      ]
+    }
+  ],
+  "notes": "Computes sqrt(x*x+y*y+z*z) from#accelerate; vectors3,4,0 and1,2,2 give5 and3. Switching the inlet gate off blocks the final large vector."
+}

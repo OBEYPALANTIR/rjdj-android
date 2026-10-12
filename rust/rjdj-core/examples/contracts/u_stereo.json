@@ -1,0 +1,62 @@
+{
+  "name": "u_stereo",
+  "args": [
+    "e_alias",
+    "ali1"
+  ],
+  "source": "rj/u_stereo-help.pd:2-6,11-24 + rj/u_stereo.pd:2-10 + rj/e_alias.pd:19-24",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 220
+      }
+    },
+    {
+      "inlet": 1,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 280
+      }
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "freq",
+        11025
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.34,
+        0.37
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.34,
+        0.37
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    }
+  ],
+  "notes": "Use exactly the example dynamic class e_alias and tag ali1, so both $1 instances resolve. Independent0.5-amplitude 220/280Hz inputs are sample-held at11025Hz via the shared control inlet; RMS remains near0.5/sqrt(2) on each corresponding output. All three host inlets are driven."
+}

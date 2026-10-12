@@ -1,0 +1,79 @@
+{
+  "name": "u_sssad",
+  "args": [
+    "gain",
+    "rjqa_sssad"
+  ],
+  "source": "rj/u_sssad.pd:2-36,37-115,116-222",
+  "duration_ms": 100,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        0.25
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "receiver": "rjqa_sssad-SSSAD",
+      "at_ms": 20,
+      "message": [
+        "gain",
+        0.75
+      ]
+    },
+    {
+      "receiver": "rjqa_sssad-SSSAD_ADMIN",
+      "at_ms": 30,
+      "message": [
+        "setonly",
+        "gain"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "receiver": "rjqa_sssad-SSSAD_ADMIN",
+      "at_ms": 50,
+      "message": [
+        "save"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 3,
+      "type": "any",
+      "exact": [
+        [
+          0.25
+        ],
+        [
+          0.75
+        ],
+        [
+          0.75
+        ]
+      ],
+      "range": [
+        0,
+        1
+      ]
+    }
+  ],
+  "notes": "No u_sssad-help.pd exists at pinned e74c696; source defines the contract. Inlet1 stores/eavesdrops a gain list without immediate outlet output; inlet0 requests stored value. Namespaced SSSAD updates0.75, setonly gain restores to outlet, and a later bang repeats it. Admin save publishes persistence on the namespaced admin bus, not on the local outlet."
+}

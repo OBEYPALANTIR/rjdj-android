@@ -1,0 +1,39 @@
+[package]
+name = "rjdj-core"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+publish = false
+license = "BSD-3-Clause"
+description = "RjDj revival scene engine: static libpd, AAudio duplex loop and scene logic in one cdylib"
+
+[lib]
+name = "rjdjcore"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+libc = "=0.2.190"
+rtrb = "=0.4.0"
+arrayvec = "=0.7.8"
+zip = { version = "=9.0.1", default-features = false, features = ["deflate"] }
+quick-xml = "=0.42.0"
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "=0.22.4"
+ndk = { version = "=0.9.0", features = ["audio", "api-level-28"] }
+ndk-sys = "=0.6.0"
+
+[dev-dependencies]
+# examples/contracts.rs only (QA harness); not linked into librjdjcore.so
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.154"
+
+[build-dependencies]
+cc = "=1.8.0"
+
+[profile.release]
+panic = "abort"
+lto = "fat"
+codegen-units = 1
+strip = false
+debug = 1

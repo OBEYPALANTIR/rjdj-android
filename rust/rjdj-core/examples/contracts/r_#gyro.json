@@ -1,0 +1,33 @@
+{
+  "name": "r_#gyro",
+  "args": [],
+  "source": "r/r_#gyro-help.pd:2-6 + r/r_#gyro.pd:2-6",
+  "duration_ms": 150,
+  "stimuli": [
+    {
+      "receiver": "#gyro",
+      "at_ms": 20,
+      "message": [
+        0.1,
+        -0.2,
+        0.3
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 1,
+      "type": "list",
+      "exact": [
+        [
+          0.1,
+          -0.2,
+          0.3
+        ]
+      ]
+    }
+  ],
+  "notes": "No inlets: receives #gyro and forwards its three-axis list unchanged. With no sensor event the abstraction is quiet; no hardware gyroscope is claimed."
+}

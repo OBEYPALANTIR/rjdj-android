@@ -47,9 +47,11 @@ public class RecordingListCursorAdapter extends CursorAdapter {
 		long duration = SceneDataBase.getLong(cursor, RecordingColumn.RECORDING_DURATION);
 		textView.setText(DateFormat.format(context.getResources().getString(R.string.duration_format), duration));
 		ImageView imageView = (ImageView) view.findViewById(R.id.sceneIcon);
+		textView = (TextView) view.findViewById(R.id.sceneInfo);
+		textView.setText("Scene deleted");
+		imageView.setImageDrawable(context.getResources().getDrawable(R.drawable.default_thumb));
 		Cursor sceneCursor = db.getScene(sceneId);
 		if (sceneCursor.getCount() > 0) {
-			textView = (TextView) view.findViewById(R.id.sceneInfo);
 			textView.setText(SceneDataBase.getString(sceneCursor, SceneColumn.SCENE_TITLE));
 			String sceneFolder = SceneDataBase.getString(sceneCursor, SceneColumn.SCENE_DIRECTORY);
 			File file = new File(sceneFolder, "thumb.jpg");
@@ -60,8 +62,6 @@ public class RecordingListCursorAdapter extends CursorAdapter {
 			}
 			if (icon != null) {
 				imageView.setImageDrawable(icon);
-			} else {
-				imageView.setImageDrawable(context.getResources().getDrawable(R.drawable.default_thumb));
 			}
 		}
 		sceneCursor.close();

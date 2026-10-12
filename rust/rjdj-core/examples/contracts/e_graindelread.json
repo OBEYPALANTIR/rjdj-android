@@ -1,0 +1,190 @@
+{
+  "name": "e_graindelread",
+  "args": [
+    "TAG",
+    "R1_GRAIN_DELAY"
+  ],
+  "source": "rj/e_graindelread-help.pd:4-30,77-78,180-184 + rj/e_graindelread.pd:145-168,208-239",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "grain-rate",
+        20
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "phase",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "bw",
+        1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "vol",
+        0.8
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "vol-r",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "size",
+        50
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "size-r",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "delay",
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "delay-r",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "pan-r",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 200,
+      "message": [
+        "save"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.045,
+        0.13
+      ],
+      "window_ms": [
+        400,
+        1000
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.045,
+        0.13
+      ],
+      "window_ms": [
+        400,
+        1000
+      ]
+    },
+    {
+      "outlet": 2,
+      "kind": "control",
+      "min_messages": 10,
+      "type": "any",
+      "exact": [
+        [
+          "pan-r",
+          0
+        ],
+        [
+          "delay-r",
+          0
+        ],
+        [
+          "delay",
+          100
+        ],
+        [
+          "size-r",
+          0
+        ],
+        [
+          "size",
+          50
+        ],
+        [
+          "vol-r",
+          0
+        ],
+        [
+          "vol",
+          0.8
+        ],
+        [
+          "bw",
+          1
+        ],
+        [
+          "phase",
+          0
+        ],
+        [
+          "grain-rate",
+          20
+        ]
+      ]
+    }
+  ],
+  "notes": "Left inlet is a documented unconnected dummy (bang proves it is accepted). Zero random widths, centered pan, 0.8 volume and unit-width raised-cosine grains give each channel RMS about input_RMS*0.8*0.5*sqrt(3/8)=0.087. Named delwrite~ fixture supplies actual delay audio; no wav dependency. Save excludes phase-rand because that event was never set.",
+  "fixtures": [
+    {
+      "object": "delwrite~ R1_GRAIN_DELAY 2000",
+      "signal": {
+        "kind": "sine",
+        "freq": 440,
+        "amp": 0.5
+      }
+    }
+  ]
+}

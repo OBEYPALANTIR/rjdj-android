@@ -1,0 +1,111 @@
+{
+  "name": "s_fplaytable2",
+  "args": [
+    0
+  ],
+  "source": "r/s_fplaytable-help.pd:10-26 (shared mono/stereo example; no s_fplaytable2-help.pd) + r/s_fplaytable2.pd:2-8,25-43",
+  "duration_ms": 1400,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "loop",
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "sine440_1s",
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.34,
+        0.37
+      ],
+      "window_ms": [
+        100,
+        900
+      ],
+      "centroid_hz": [
+        420,
+        460
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.34,
+        0.37
+      ],
+      "window_ms": [
+        100,
+        900
+      ],
+      "centroid_hz": [
+        420,
+        460
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        1200,
+        1400
+      ],
+      "silent": true
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        1200,
+        1400
+      ],
+      "silent": true
+    },
+    {
+      "outlet": 2,
+      "kind": "control",
+      "min_messages": 1,
+      "type": "bang",
+      "exact": [
+        [
+          "bang"
+        ]
+      ]
+    }
+  ],
+  "notes": "Stereo wrapper appends -1/-2 to the incoming table name and plays each channel with s_fplaytable; completion is forwarded from channel 2. The generated peak-0.5 mono sine is loaded into both named channel arrays explicitly, so both outlets must have matching predicted RMS 0.35355 and 440 Hz centroid. Offset 0 and loop 0 require completion near 1020 ms, followed by silence on both channels. The paired help example documents the stereo interface.",
+  "files": [
+    "generated:sine440_1s.wav"
+  ],
+  "tables": [
+    {
+      "name": "sine440_1s-1",
+      "file": "generated:sine440_1s.wav"
+    },
+    {
+      "name": "sine440_1s-2",
+      "file": "generated:sine440_1s.wav"
+    }
+  ]
+}

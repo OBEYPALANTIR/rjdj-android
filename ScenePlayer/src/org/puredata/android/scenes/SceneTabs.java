@@ -9,13 +9,19 @@
 
 package org.puredata.android.scenes;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
-import org.puredata.core.PdBase;
-import org.puredata.core.utils.IoUtils;
 
 import android.app.TabActivity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
@@ -46,14 +52,45 @@ public class SceneTabs extends TabActivity {
 	}
 	
 	private void unpackResources() {
-		Resources res = getResources();
 		File libDir = getFilesDir();
-		try {
-			IoUtils.extractZipResource(res.openRawResource(R.raw.abstractions), libDir, true);
+		try (ZipInputStream zip = new ZipInputStream(new BufferedInputStream(
+				getResources().openRawResource(R.raw.abstractions)))) {
+			String canonicalRoot = libDir.getCanonicalPath();
+			ZipEntry entry;
+			while ((entry = zip.getNextEntry()) != null) {
+				File file = new File(libDir, entry.getName());
+				if (!file.getCanonicalPath().startsWith(canonicalRoot + File.separator)) {
+					throw new IOException("Zip Path Traversal Vulnerability: Zip entry " + entry.getName()
+							+ " has " + file.getCanonicalPath() + " as its target path. "
+							+ "But it should not be outside target dir " + canonicalRoot);
+				}
+				if (entry.isDirectory()) {
+					Files.createDirectories(file.toPath());
+				} else {
+					Files.createDirectories(file.getParentFile().toPath());
+					Files.copy(zip, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				}
+			}
 		} catch (IOException e) {
 			Log.e("Scene Player", e.toString());
 		}
-		PdBase.addToSearchPath(libDir.getAbsolutePath());
+	}
+
+	static String seedDefault(Context context, File scenesRoot) throws IOException {
+		File cache = context.getCacheDir();
+		File archive = File.createTempFile("atsuke-", ".zip", cache);
+		try {
+			try (InputStream input = context.getResources().openRawResource(R.raw.atsuke);
+					FileOutputStream output = new FileOutputStream(archive)) {
+				byte[] buffer = new byte[8192];
+				int count;
+				while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
+			}
+			return RjdjCore.seedDefault(scenesRoot.getAbsolutePath(), archive.getAbsolutePath(), false);
+		} finally {
+			try { RjdjCore.deleteOwnedTree(cache.getAbsolutePath(), archive.getAbsolutePath()); }
+			catch (IOException e) { Log.w("Scene Player", "Unable to remove default scene archive", e); }
+		}
 	}
 
 }

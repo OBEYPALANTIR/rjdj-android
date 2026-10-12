@@ -1,0 +1,52 @@
+{
+  "name": "g_hsl4",
+  "args": [
+    "slider",
+    0,
+    127
+  ],
+  "source": "rj/g_hsl4-help.pd:1-9,41-58 + rj/g_hsl4.pd:18-27,60-103",
+  "duration_ms": 250,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "slider",
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "unused",
+        9
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "exact": [
+        [
+          "slider",
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          "unused",
+          9
+        ]
+      ]
+    }
+  ],
+  "notes": "Tagged input updates the GUI using set (no duplicate emission); the inlet is also wired directly to the outlet, preserving matching and unmatched messages. This checks exact control passthrough and tag/value routing, not visual appearance or user mouse interaction."
+}

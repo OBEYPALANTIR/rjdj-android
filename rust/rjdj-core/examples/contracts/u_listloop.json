@@ -1,0 +1,100 @@
+{
+  "name": "u_listloop",
+  "args": [],
+  "source": "rj/u_listloop-help.pd:28-42 + rj/u_listloop.pd:2-24",
+  "duration_ms": 100,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        10,
+        20,
+        30
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 5,
+      "message": [
+        "set",
+        2
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "bang"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 4,
+      "type": "float",
+      "exact": [
+        [
+          30
+        ],
+        [
+          10
+        ],
+        [
+          20
+        ],
+        [
+          30
+        ]
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 4,
+      "type": "float",
+      "exact": [
+        [
+          2
+        ],
+        [
+          0
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ]
+      ],
+      "range": [
+        0,
+        2
+      ]
+    }
+  ],
+  "notes": "set2 selects the last item without output; bangs walk modulo the three-element list. Both selected values and zero-based indices are exact, covering position setup and wraparound."
+}

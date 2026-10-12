@@ -1,0 +1,54 @@
+{
+  "name": "c_mfade3",
+  "args": [],
+  "source": "rj/c_mfade3-help.pd:38-53 + rj/c_mfade3.pd:30-58",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 400
+      }
+    },
+    {
+      "inlet": 1,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 800
+      }
+    },
+    {
+      "inlet": 2,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 1200
+      }
+    },
+    {
+      "inlet": 3,
+      "signal": {
+        "kind": "dc",
+        "amp": 0.5
+      }
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.24,
+        0.26
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    }
+  ],
+  "notes": "Control signal 0.5 is halfway through the b->c section. Linear half-gains on two orthogonal 0.5 sinusoids give RMS 0.25; inlet 0 is still driven to detect unintended a leakage. Help has off-by-one inlet labels; source has four inlets indexed 0..3."
+}

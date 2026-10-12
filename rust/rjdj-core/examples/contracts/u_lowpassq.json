@@ -1,0 +1,68 @@
+{
+  "name": "u_lowpassq",
+  "args": [
+    1000,
+    2
+  ],
+  "source": "rj/u_lowpassq-help.pd:1-55 + rj/u_lowpassq.pd:2-80,199-220,270-335",
+  "duration_ms": 100,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        1000
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 20,
+      "message": [
+        2
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        "bang"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 3,
+      "type": "list",
+      "exact": [
+        [
+          1.7933199151911876,
+          -0.8686737597366923,
+          0.018838461136376137,
+          0.037676922272752274,
+          0.018838461136376137
+        ],
+        [
+          1.7933199151911876,
+          -0.8686737597366923,
+          0.018838461136376137,
+          0.037676922272752274,
+          0.018838461136376137
+        ],
+        [
+          1.7933199151911876,
+          -0.8686737597366923,
+          0.018838461136376137,
+          0.037676922272752274,
+          0.018838461136376137
+        ]
+      ],
+      "range": [
+        -2,
+        2
+      ]
+    }
+  ],
+  "notes": "RBJ resonant lowpass coefficient generator, not an audio processor. Both frequency and Q inputs are hot. At SR22050/f1000 it must output [2*cos(w)/(1+alpha), -(1-alpha)/(1+alpha), b0/(1+alpha), b1/(1+alpha), b2/(1+alpha)] in Pd biquad order. alpha=sin(w)/(2*Q). Creation values prevent zero-width startup; repeated equal values and bang must reproduce the same five coefficients."
+}

@@ -1,0 +1,78 @@
+{
+  "name": "m_symbolarray",
+  "args": [],
+  "source": "rj/m_symbolarray-help.pd:48-77 + rj/m_symbolarray.pd:19-107,151-206,207-253",
+  "duration_ms": 500,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 20,
+      "message": [
+        0,
+        "zero"
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 40,
+      "message": [
+        1,
+        "one"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 80,
+      "message": [
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 150,
+      "message": [
+        "dump"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "symbol",
+      "exact": [
+        [
+          "zero"
+        ],
+        [
+          "one"
+        ]
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "list",
+      "exact": [
+        [
+          0,
+          "zero"
+        ],
+        [
+          1,
+          "one"
+        ]
+      ]
+    }
+  ],
+  "notes": "Storetwo explicitly named symbols, lookup both, and dump indexed entries suitable for copying to another array. Data-structure pointer/array growth and serialization are exercised; these are not plain numeric tables."
+}

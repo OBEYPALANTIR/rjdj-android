@@ -1,0 +1,11 @@
+#N canvas 0 0 600 400 10;
+#X obj 20 20 bonk~;
+#X obj 20 60 fiddle~;
+#X obj 20 100 sigmund~;
+#X obj 20 140 bob~;
+#X obj 20 180 lrshift~;
+#X obj 220 20 loop~;
+#X obj 220 60 pique;
+#X obj 220 100 choice;
+#X obj 220 140 stdout;
+#X obj 220 180 pd~;

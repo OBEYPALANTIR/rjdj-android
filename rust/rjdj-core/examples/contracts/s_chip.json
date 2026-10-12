@@ -1,0 +1,359 @@
+{
+  "name": "s_chip",
+  "args": [
+    "COR-R2-chip"
+  ],
+  "source": "r/s_chip-help.pd:76-84,319-338 + r/s_chip.pd:86-168,188-194,379-383,590-598",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1a",
+        0.000708661
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1d",
+        0.0637795
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1s",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1r",
+        0.0331496
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2a",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2d",
+        1.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2s",
+        1.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2r",
+        0.023622
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3a",
+        0.023937
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3d",
+        1.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3s",
+        1.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3r",
+        0.0314961
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1a",
+        0.0314961
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1b",
+        0.653543
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1c",
+        0.527559
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1d",
+        0.409449
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2a",
+        0.0472441
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2b",
+        0.283465
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2c",
+        0.566929
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2d",
+        0.283465
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3a",
+        0.606299
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3b",
+        0.692913
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3c",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3d",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1a",
+        0.76378
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1b",
+        0.732283
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1c",
+        0.0629921
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1d",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2a",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2b",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2c",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2d",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3a",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3b",
+        0.34685
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3c",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3d",
+        0.0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        48,
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 300,
+      "message": [
+        "save"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 500,
+      "message": [
+        48,
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.01,
+        0.8
+      ],
+      "window_ms": [
+        110,
+        250
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        800,
+        1000
+      ],
+      "silent": true
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 36,
+      "type": "list",
+      "range": [
+        0,
+        1
+      ]
+    }
+  ],
+  "notes": "The help fatbass preset is sent explicitly (all 36 parameters), followed by MIDI note 48 at velocity 100. Two bounded binary-table oscillators are envelope gated and scaled by 3*mod3b=1.04055; an early attack/decay window must carry bounded audible energy. env1 sustain is zero, decay 255.118 ms and release 232.047 ms, so the late window must be silent. save must report all 36 parameter/value lists, with values in the documented 0..1 range. Self-contained binary tables, no wav fixture."
+}

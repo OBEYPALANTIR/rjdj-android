@@ -18,25 +18,30 @@ There is no network permission, account, scene marketplace or location capture. 
 
 ## Build and check
 
-Use a checkout path without spaces because the native build uses ndk-build. Requirements: JDK 21, Android SDK platform 37.0, Build Tools 37.0.0 and NDK 29.0.14206865. Gradle 9.6.1 is supplied by the wrapper; AGP 9.1.1 supports API 37. Minimum install API is 28; primary acceptance is Android 17.
+Requirements: JDK 21, Android SDK platform 37.0, Build Tools 37.0.0, NDK 29.0.14206865, Rust stable with the `aarch64-linux-android` target, and cargo-ndk 4.1.2. Gradle 9.8.1 is supplied by the wrapper; AGP 9.1.1 supports API 37. Minimum install API is 28; the APK is arm64-only and primary acceptance is Android 17.
 
 ```sh
 git submodule update --init --recursive
 sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;29.0.14206865'
+rustup default stable
+rustup target add aarch64-linux-android
+cargo install cargo-ndk --version 4.1.2 --locked
 ./gradlew :ScenePlayer:checkSceneFiles :ScenePlayer:assembleDebug :ScenePlayer:assembleDebugAndroidTest :ScenePlayer:lintDebug --max-workers=2
 adb -s YOUR_SERIAL install -r ScenePlayer/build/outputs/apk/debug/ScenePlayer-debug.apk
 ```
 
-Set `JAVA_HOME` and `ANDROID_HOME` to your installed JDK and SDK. The package is `org.rjdj.revival`. The debug APK uses a development signing key and is not a store release.
+Set `JAVA_HOME` and `ANDROID_HOME` to your installed JDK and SDK, with `cargo` on `PATH`. Gradle builds `librjdjcore.so` and the five separately loaded `rj_*` externals directly with the pinned NDK, and bundles the seven standard Pd abstractions previously supplied by pd-core. The retained `PdCore` submodule supplies source only. The package is `org.rjdj.revival`. The debug APK uses a development signing key and is not a store release.
 
-The standalone file checks cover archive traversal, entity declarations, expansion limits, collisions and playback-copy preservation. The instrumentation check exercises the Android parser, SQLite registration recovery and deterministic buffers through packaged native libpd:
+`checkSceneFiles` runs `cargo test --manifest-path rust/rjdj-core/Cargo.toml`: archive and metadata validation, recovery, playback-copy preservation, recording validation, DSP and resampling checks. CI also checks every native library's 16 KB ELF alignment and runs `zipalign -c -P 16 -v 4` on the APK.
+
+Grant microphone permission in the app and pause playback before the device check. Instrumentation opens the app, checks native import/SQLite recovery and the service's seven unpacked Pd abstractions, then records a tone and a muted microphone scene through the real AAudio engine:
 
 ```sh
 adb -s YOUR_SERIAL install -r ScenePlayer/build/outputs/apk/androidTest/debug/ScenePlayer-debug-androidTest.apk
 adb -s YOUR_SERIAL shell am instrument -w org.rjdj.revival.test/org.puredata.android.scenes.SceneEngineInstrumentation
 ```
 
-A successful instrumentation run prints `PASS` and exits with `INSTRUMENTATION_CODE: -1`. It uses the plain JNI rendering entry point; real microphone, foreground-service, notification and recording flows require separate on-device verification. Physical audio latency, Bluetooth routing and sensor calibration require a phone and headphones.
+A successful instrumentation run prints `PASS` and exits with `INSTRUMENTATION_CODE: -1`. It requires a nonempty stereo WAV at 22050 Hz, tone energy and channel parity, and near-zero recorded energy after microphone mute. Foreground-service, notification, touch/overlays, permission recovery and interruption flows need separate on-device verification. Physical audio latency, Bluetooth routing and sensor calibration require a phone and headphones.
 
 ## Provenance and compatibility
 
@@ -44,6 +49,7 @@ A successful instrumentation run prints `PASS` and exits with `INSTRUMENTATION_C
 - Native engine: pinned libpd, Pure Data and opensl_stream submodules. Their own license files remain in place.
 - The bundled Atsuke scene, its artwork and rj abstractions retain the licenses inside `ScenePlayer/res/raw/atsuke.zip`, including GPLv3 notices. The host's BSD license does not replace scene licenses.
 - [rjdj/rjlib](https://github.com/rjdj/rjlib/tree/e74c696afebe672c5bfed543cdd77e2d53865db6) documents the historical scene format. Its default GPL license has per-file exceptions.
+- Open **Notices** in the Scenes tab for bundled component licenses, crate versions, unresolved external terms and the independent-revival trademark statement.
 
 The host implements microphone/stereo audio, transport and recording messages, 320-unit touch coordinates, acceleration messages, and image/text overlays. Compatibility depends on the objects used by each patch; missing third-party externals are not emulated. The original app binary was unavailable for direct behavioral comparison.
 

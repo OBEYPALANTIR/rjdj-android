@@ -1,0 +1,74 @@
+{
+  "name": "u_listequal",
+  "args": [],
+  "source": "rj/u_listequal-help.pd:2-18 + rj/u_listequal.pd:2-67",
+  "duration_ms": 100,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        1,
+        2,
+        3
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 3,
+      "type": "float",
+      "exact": [
+        [
+          1
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ]
+      ],
+      "range": [
+        0,
+        1
+      ]
+    }
+  ],
+  "notes": "Only number lists are supported. An equal list returns1, equal-length value mismatch returns0, and unequal length returns0. The unsupported symbol-list case is deliberately not claimed."
+}

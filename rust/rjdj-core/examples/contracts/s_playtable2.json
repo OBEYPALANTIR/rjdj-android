@@ -1,0 +1,105 @@
+{
+  "name": "s_playtable2",
+  "args": [],
+  "source": "rj/s_playtable2-help.pd:9-24,33-43,57-58 + rj/s_playtable2.pd:2-18",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "sr",
+        22050
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "fade",
+        0,
+        2
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "rjqa_sample",
+        1,
+        1,
+        0,
+        600
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.34,
+        0.36
+      ],
+      "window_ms": [
+        100,
+        500
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.34,
+        0.36
+      ],
+      "window_ms": [
+        100,
+        500
+      ]
+    },
+    {
+      "outlet": 2,
+      "kind": "control",
+      "min_messages": 1,
+      "type": "bang",
+      "exact": [
+        [
+          "bang"
+        ]
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "window_ms": [
+        800,
+        1000
+      ],
+      "silent": true
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "window_ms": [
+        800,
+        1000
+      ],
+      "silent": true
+    }
+  ],
+  "notes": "Stereo wrapper plays basename-1 and basename-2 using independent s_playtable instances. Both fixtures contain the same 0.5-amplitude tone; both RMS values must be 0.5/sqrt(2), followed by silence and one duration-completion bang. Pd port order is left-to-right, not file declaration order.",
+  "files": [
+    "generated:sine440_1s.wav"
+  ],
+  "tables": [
+    {
+      "name": "rjqa_sample-1",
+      "file": "generated:sine440_1s.wav"
+    },
+    {
+      "name": "rjqa_sample-2",
+      "file": "generated:sine440_1s.wav"
+    }
+  ]
+}

@@ -1,0 +1,340 @@
+{
+  "name": "s_fm4",
+  "args": [
+    "COR-R2-fm4"
+  ],
+  "source": "r/s_fm4-help.pd:3-32,159-163 + r/s_fm4.pd:10-32,109-139,539-552,553-651",
+  "duration_ms": 1300,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "A1",
+        2
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "D1",
+        10
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "S1",
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "R1",
+        50
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "vol1",
+        1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "ratio1",
+        1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "index1",
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "A2",
+        2
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "D2",
+        10
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "S2",
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "R2",
+        50
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "vol2",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "ratio2",
+        1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "index2",
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "A3",
+        2
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "D3",
+        10
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "S3",
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "R3",
+        50
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "vol3",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "ratio3",
+        1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "index3",
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "A4",
+        2
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "D4",
+        10
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "S4",
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "R4",
+        50
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "vol4",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "ratio4",
+        1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "index4",
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        69,
+        127
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 300,
+      "message": [
+        "save"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 800,
+      "message": [
+        69,
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.68,
+        0.74
+      ],
+      "window_ms": [
+        200,
+        700
+      ],
+      "centroid_hz": [
+        420,
+        460
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.68,
+        0.74
+      ],
+      "window_ms": [
+        200,
+        700
+      ],
+      "centroid_hz": [
+        420,
+        460
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        1000,
+        1300
+      ],
+      "silent": true
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        1000,
+        1300
+      ],
+      "silent": true
+    },
+    {
+      "outlet": 2,
+      "kind": "control",
+      "min_messages": 28,
+      "type": "list",
+      "range": [
+        0,
+        100
+      ]
+    }
+  ],
+  "notes": "An explicitly configured single carrier isolates operator 1: ratio 1, volume 1, no modulation routing, velocity 127, sustain 100%, other operator volumes 0. The source pmosc is cos~ and both audio outlets duplicate its output, predicting unit-peak 440 Hz sine and RMS 1/sqrt(2). Release 50 ms at note-off must leave both outputs silent at 1000 ms. save reports all 28 operator parameters; indexes are four-element zero lists. No wav is used."
+}

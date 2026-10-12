@@ -1,0 +1,92 @@
+{
+  "name": "u_makepolymono",
+  "args": [
+    8,
+    1,
+    "s_rhodey",
+    "rjqa_MYINST"
+  ],
+  "source": "rj/u_makepolymono-help.pd:14-35,57-63 + rj/u_makepolymono.pd:2-15 + rj/s_rhodey.pd:79-114",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "tone",
+        0.5
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mod",
+        1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "adsr24",
+        127
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "decay",
+        1500
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        60,
+        100
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 200,
+      "message": [
+        64,
+        100
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 500,
+      "message": [
+        60,
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 700,
+      "message": [
+        64,
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.01,
+        1.5
+      ],
+      "window_ms": [
+        100,
+        400
+      ]
+    }
+  ],
+  "notes": "Use the help creation arguments8 voices, stealing1, s_rhodey, with the example parent $0-MYINST replaced by a unique literal. Loadbang dynamically creates the actual eight FM instruments; MIDI note/velocity and shared controls must produce bounded summed audio. The mono wrapper has the correct two-inlet/one-outlet arity."
+}

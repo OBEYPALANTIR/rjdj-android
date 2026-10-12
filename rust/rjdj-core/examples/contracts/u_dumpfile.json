@@ -1,0 +1,92 @@
+{
+  "name": "u_dumpfile",
+  "args": [],
+  "source": "rj/u_dumpfile-help.pd:19-41,55-73 + rj/u_dumpfile.pd:2-14,95-119",
+  "duration_ms": 200,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        "clear"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 5,
+      "message": [
+        "add",
+        10,
+        20
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        "add",
+        30,
+        40
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "dump",
+        20
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        "numdump",
+        20
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 4,
+      "type": "list",
+      "exact": [
+        [
+          10,
+          20
+        ],
+        [
+          30,
+          40
+        ],
+        [
+          0,
+          10,
+          20
+        ],
+        [
+          1,
+          30,
+          40
+        ]
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "bang",
+      "exact": [
+        [
+          "bang"
+        ],
+        [
+          "bang"
+        ]
+      ]
+    }
+  ],
+  "notes": "Enhanced textfile. Two add messages establish actual textfile lines without an external file; delayed dump preserves their payloads, numdump prepends zero-based line indices. EOF must emit bang on the right outlet for both traversals."
+}

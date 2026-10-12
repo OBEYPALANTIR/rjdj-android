@@ -1,0 +1,73 @@
+{
+  "name": "s_rhodey",
+  "args": [
+    "mypiano"
+  ],
+  "source": "rj/s_rhodey-help.pd:60-93 + rj/s_rhodey.pd:79-114,132-154",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "tone",
+        0.5
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mod",
+        1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "adsr24",
+        127
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "decay",
+        1500
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        60,
+        100
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 800,
+      "message": [
+        60,
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.005,
+        0.8
+      ],
+      "window_ms": [
+        100,
+        500
+      ]
+    }
+  ],
+  "notes": "Four-operator FM Rhodes piano. Inlet 0 accepts MIDI note/velocity; inlet 1 sets tone and envelope/modulation parameters. The two unit-envelope carriers are crossfaded at 0.5; a velocity-100 note must produce nonzero bounded audio."
+}

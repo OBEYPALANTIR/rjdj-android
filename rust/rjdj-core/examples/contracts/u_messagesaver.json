@@ -1,0 +1,92 @@
+{
+  "name": "u_messagesaver",
+  "args": [
+    "s_osc",
+    "MYOSCILLATOR"
+  ],
+  "source": "rj/u_messagesaver-help.pd:3-20,110,155-168 + rj/u_messagesaver.pd:2-13",
+  "duration_ms": 100,
+  "stimuli": [
+    {
+      "receiver": "RJ_SCENE_LOAD",
+      "at_ms": 10,
+      "message": [
+        "s_osc-MYOSCILLATOR",
+        "switch",
+        0,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        "bang"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 11,
+      "type": "any",
+      "exact": [
+        [
+          "set"
+        ],
+        [
+          "add2",
+          "switch",
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          "addcomma"
+        ],
+        [
+          "add2",
+          "tri",
+          0
+        ],
+        [
+          "addcomma"
+        ],
+        [
+          "add2",
+          "square",
+          0
+        ],
+        [
+          "addcomma"
+        ],
+        [
+          "add2",
+          "saw",
+          1
+        ],
+        [
+          "addcomma"
+        ],
+        [
+          "add2",
+          "sine",
+          0
+        ],
+        [
+          "addcomma"
+        ]
+      ]
+    }
+  ],
+  "notes": "The real s_osc MYOSCILLATOR companion matches the help target and has the documented saw-only switch preset restored through RJ_SCENE_LOAD. bang requests global save, filters the target tag, and emits set/add2/addcomma operations for all five saved fields in the exact order shown by the help saved message.",
+  "fixtures": [
+    {
+      "object": "s_osc MYOSCILLATOR"
+    }
+  ]
+}

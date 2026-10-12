@@ -1,0 +1,58 @@
+{
+  "name": "e_reslop",
+  "args": [
+    "mylop",
+    2000
+  ],
+  "source": "rj/e_reslop-help.pd:20,25-36 + rj/e_reslop.pd:2-21,38-60",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 1000
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "freq",
+        1000
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "q",
+        10
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "dry",
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.025,
+        0.25
+      ],
+      "window_ms": [
+        300,
+        1000
+      ]
+    }
+  ],
+  "notes": "Source has a vcf~ resonator followed by three one-pole lowpasses at the same cutoff. A sine at the 1000 Hz resonance remains audible but is attenuated by the post-filter cascade. Fully wet is dry=0 according to wiring, despite the help parenthetical dry wording."
+}

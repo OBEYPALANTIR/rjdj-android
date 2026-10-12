@@ -1,0 +1,50 @@
+{
+  "name": "e_alias",
+  "args": [
+    "aliasContract",
+    4
+  ],
+  "source": "rj/e_alias-help.pd:17-22,33 + rj/e_alias.pd:4-24",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 220
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "alias",
+        4
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "dry",
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.33,
+        0.38
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    }
+  ],
+  "notes": "Sample-and-hold runs at samplerate/4=5512.5 Hz. A 220 Hz sine remains below its new Nyquist and retains approximately input RMS at fully wet output; state-saving nametag replaces the help canvas-local id."
+}

@@ -1,0 +1,56 @@
+{
+  "name": "e_resonzq",
+  "args": [
+    2000,
+    20,
+    2
+  ],
+  "source": "rj/e_resonzq-help.pd:12,18-38 + rj/e_resonzq.pd:33-44,73-76,109-133",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 2000
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        2000
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        20
+      ]
+    },
+    {
+      "inlet": 3,
+      "at_ms": 0,
+      "message": [
+        1
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.32,
+        0.39
+      ],
+      "window_ms": [
+        300,
+        1000
+      ]
+    }
+  ],
+  "notes": "Creation args match help; normalization is explicitly switched from power to peak for a sine input. At its 2000 Hz center frequency the two-pole resonator has approximately unit gain, predicting input-like RMS. Physical source order is audio x=89, center x=223, Q x=355, scaling x=544; there is only outlet 0 despite help label Outlet 1."
+}

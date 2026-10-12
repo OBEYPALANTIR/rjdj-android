@@ -1,0 +1,59 @@
+{
+  "name": "m_ms2sm",
+  "args": [
+    22050
+  ],
+  "source": "rj/m_ms2sm-help.pd:3-20,54-55 + rj/m_ms2sm.pd:2-19",
+  "duration_ms": 300,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 20,
+      "message": [
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        1000
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 60,
+      "message": [
+        44100
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 80,
+      "message": [
+        1000
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "float",
+      "exact": [
+        [
+          22050
+        ],
+        [
+          44100
+        ]
+      ],
+      "range": [
+        22050,
+        44100
+      ]
+    }
+  ],
+  "notes": "Samplerate inlet0 selects the real22050Hz engine:1000ms->22050samples. Explicit44100Hz override yields44100samples. Both samplerate selection paths are driven."
+}

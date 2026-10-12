@@ -1,0 +1,95 @@
+{
+  "name": "c_taptap",
+  "args": [
+    16
+  ],
+  "source": "rj/c_taptap-help.pd:35-55 + rj/c_taptap.pd:49-88 + rj/u_cocollect.pd:2-9",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "clear"
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "set",
+        1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 20,
+      "message": [
+        "set",
+        3
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        2
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 50,
+      "message": [
+        3
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 60,
+      "message": [
+        "dump"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "bang"
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 5,
+      "type": "any",
+      "exact": [
+        [
+          "set"
+        ],
+        [
+          "add2",
+          1
+        ],
+        [
+          "addcomma"
+        ],
+        [
+          "add2",
+          3
+        ],
+        [
+          "addcomma"
+        ]
+      ]
+    }
+  ],
+  "notes": "Positions 1 and 3 are enabled, so selecting them bangs while position 2 remains disabled. Dump sends actual message-box editing commands from u_cocollect, not an invented plain list."
+}

@@ -1,0 +1,359 @@
+{
+  "name": "s_cwc",
+  "args": [
+    "COR-R2-cwc"
+  ],
+  "source": "r/s_cwc-help.pd:119-128,366-386 + r/s_cwc.pd:84-89,220-245,261-349,510-519",
+  "duration_ms": 1500,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1a",
+        0.00023622
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1d",
+        0.0708661
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1s",
+        0.0472441
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1r",
+        0.00944882
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2a",
+        0.000393701
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2d",
+        0.0866142
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2s",
+        0.0787402
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2r",
+        0.015748
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3a",
+        0.000629921
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3d",
+        0.0551181
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3s",
+        0.354331
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3r",
+        0.0177165
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1a",
+        0.606299
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1b",
+        0.0866142
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1c",
+        0.543307
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1d",
+        0.645669
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2a",
+        0.0472441
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2b",
+        1.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2c",
+        0.582677
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2d",
+        0.212598
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3a",
+        0.682913
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3b",
+        0.480315
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3c",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3d",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1a",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1b",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1c",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1d",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2a",
+        0.0393701
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2b",
+        0.874016
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2c",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2d",
+        0.409449
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3a",
+        0.102362
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3b",
+        0.102362
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3c",
+        0.267717
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3d",
+        0.181102
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        60,
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 300,
+      "message": [
+        "save"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 850,
+      "message": [
+        60,
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.001,
+        0.75
+      ],
+      "window_ms": [
+        200,
+        600
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        1200,
+        1500
+      ],
+      "silent": true
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 36,
+      "type": "list",
+      "range": [
+        0,
+        1
+      ]
+    }
+  ],
+  "notes": "Uses all 36 values of the documented basic preset. MIDI note 60/velocity 100 excites the four-harmonic/waveshaper stages, whose outputs are envelope weighted, mixed at *0.25 and high-pass filtered. The small sustain values justify a low but positive RMS floor; bounded oscillator stages and the supplied mix gains predict output below 0.75 RMS. Maximum preset release is env3r*7000=124.016 ms, so the 1200 ms onward window must be silent after note-off at 850 ms. save returns 36 bounded parameter/value lists. No sample file is consumed."
+}

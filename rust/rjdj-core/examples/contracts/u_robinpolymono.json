@@ -1,0 +1,52 @@
+{
+  "name": "u_robinpolymono",
+  "args": [
+    8,
+    "s_drumelectro",
+    "a",
+    "b",
+    "c",
+    "d"
+  ],
+  "source": "rj/u_robinpolymono-help.pd:8-23,26-50 + rj/u_robinpolymono.pd:2-12 + rj/s_drumelectro.pd:2-48",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "bd"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 300,
+      "message": [
+        "bd"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.02,
+        1.2
+      ],
+      "window_ms": [
+        40,
+        250
+      ]
+    }
+  ],
+  "notes": "Use exactly the documented dynamic voice class and creation args8 s_drumelectro a b c d. Each bd triggers an independent real bass-drum voice via the round-robin senders. s_drumelectro has only inlet0 and outlet0, so dynamic connection to its inlet1 fails; shared inlet1 stimulation intentionally cannot affect this selected voice. Expected diagnostic: connection failed (missing s_drumelectro inlet1); the mono audio outlet still works. Help documents arity-related console errors.",
+  "expected_result": "instantiates-with-errors"
+}

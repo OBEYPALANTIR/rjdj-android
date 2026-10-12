@@ -1,0 +1,73 @@
+{
+  "name": "e_scompress",
+  "args": [
+    "sidechainContract"
+  ],
+  "source": "rj/e_scompress-help.pd:32-47,58 + rj/e_scompress.pd:7-29,55-80",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 660
+      }
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "attack",
+        20
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "release",
+        200
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "ratio",
+        4
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "thresh",
+        80
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.115,
+        0.165
+      ],
+      "window_ms": [
+        400,
+        1000
+      ]
+    }
+  ],
+  "notes": "Sidechain sine RMS 0.354 gives Pd level about 90.97; threshold 80 and ratio 4 reduce gain by about 8.23 dB. Program sine is delayed 256 samples and then attenuated to expected RMS around 0.137 after attack settling. Control is physical inlet 2, not inventory source-line order."
+}

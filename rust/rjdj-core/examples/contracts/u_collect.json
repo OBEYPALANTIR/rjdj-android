@@ -1,0 +1,67 @@
+{
+  "name": "u_collect",
+  "args": [],
+  "source": "rj/u_collect-help.pd:8-19 + rj/u_collect.pd:2-7",
+  "duration_ms": 100,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "hello",
+        4
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 30,
+      "message": [
+        "bang"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 4,
+      "type": "any",
+      "exact": [
+        [
+          "set"
+        ],
+        [
+          "add2",
+          1,
+          2,
+          3
+        ],
+        [
+          "add2",
+          "hello",
+          4
+        ],
+        [
+          "set"
+        ]
+      ]
+    }
+  ],
+  "notes": "Formats incoming messages as add2 operations for a connected message box; a message to inlet1 clears it with set. Exact selectors and payloads certify both accumulation formatting and clear."
+}

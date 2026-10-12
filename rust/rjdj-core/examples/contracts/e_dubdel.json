@@ -1,0 +1,152 @@
+{
+  "name": "e_dubdel",
+  "args": [
+    "mydubdel"
+  ],
+  "source": "rj/e_dubdel-help.pd:28-49,80-85 + rj/e_dubdel.pd:2-50",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 660
+      }
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "dry",
+        0
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "bq",
+        2
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "basedur",
+        100
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "bpitch",
+        69
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "feedback",
+        0
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "dell",
+        2
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "delr",
+        3
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 200,
+      "message": [
+        "save"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.005,
+        0.08
+      ],
+      "window_ms": [
+        400,
+        1000
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.002,
+        0.08
+      ],
+      "window_ms": [
+        400,
+        1000
+      ]
+    },
+    {
+      "outlet": 2,
+      "kind": "control",
+      "min_messages": 7,
+      "type": "any",
+      "exact": [
+        [
+          "dry",
+          0
+        ],
+        [
+          "bq",
+          2
+        ],
+        [
+          "basedur",
+          100
+        ],
+        [
+          "bpitch",
+          69
+        ],
+        [
+          "feedback",
+          0
+        ],
+        [
+          "dell",
+          2
+        ],
+        [
+          "delr",
+          3
+        ]
+      ]
+    }
+  ],
+  "notes": "Fully wet output follows source wiring (the help dry=0-all-dry sentence conflicts with its example and c_xfade). With zero feedback, source scales input by 0.1 before 440 Hz bandpass and delays it by 50/33.33 ms. Save must report the seven dispatched settings, in the reverse registration order shown in the help save example."
+}

@@ -1,0 +1,45 @@
+{
+  "name": "e_freqshift",
+  "args": [
+    "frequencyContract"
+  ],
+  "source": "rj/e_freqshift-help.pd:12-21 + rj/e_freqshift.pd:2-9,33-38",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "freq",
+        100
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.3,
+        0.4
+      ],
+      "window_ms": [
+        300,
+        1000
+      ],
+      "centroid_hz": [
+        500,
+        580
+      ]
+    }
+  ],
+  "notes": "Hilbert single-sideband shifter adds 100 Hz to a 440 Hz tone, predicting approximately 540 Hz with preserved amplitude. Spectrum allows finite quadrature-filter leakage rather than accepting any nonzero audio."
+}

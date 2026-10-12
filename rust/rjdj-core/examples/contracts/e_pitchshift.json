@@ -1,0 +1,59 @@
+{
+  "name": "e_pitchshift",
+  "args": [],
+  "source": "rj/e_pitchshift-help.pd:2-18 + rj/e_pitchshift.pd:3-56,108-117",
+  "duration_ms": 1500,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 220
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "size",
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "delay",
+        1.5
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "pitch",
+        12
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.22,
+        0.55
+      ],
+      "window_ms": [
+        500,
+        1500
+      ],
+      "centroid_hz": [
+        390,
+        490
+      ]
+    }
+  ],
+  "notes": "Delayline rotating-head pitch shifter transposes 220 Hz up twelve semitones to about 440 Hz. RMS band allows overlap windows and spectral band rules out unchanged dry audio; wait past the size/delay interpolation."
+}

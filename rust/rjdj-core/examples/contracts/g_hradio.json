@@ -1,0 +1,44 @@
+{
+  "name": "g_hradio",
+  "args": [
+    "three",
+    3
+  ],
+  "source": "rj/g_hradio-help.pd:17-29 + rj/g_hradio.pd:2-18,38-53",
+  "duration_ms": 250,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "three",
+        2
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "symbol",
+        "junk"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "exact": [
+        [
+          "three",
+          2
+        ],
+        [
+          "junk"
+        ]
+      ]
+    }
+  ],
+  "notes": "Tagged input updates the GUI using set (no duplicate emission); the inlet is also wired directly to the outlet, preserving matching and unmatched messages. This checks exact control passthrough and tag/value routing, not visual appearance or user mouse interaction."
+}

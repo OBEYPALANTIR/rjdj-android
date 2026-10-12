@@ -1,0 +1,53 @@
+{
+  "name": "e_vocoder",
+  "args": [
+    "myvocoder"
+  ],
+  "source": "rj/e_vocoder-help.pd:68-83 + rj/e_vocoder.pd:2-91,139-163",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.25,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 2,
+      "at_ms": 20,
+      "message": [
+        "squelch",
+        30
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.015,
+        0.5
+      ],
+      "window_ms": [
+        200,
+        1000
+      ],
+      "centroid_hz": [
+        350,
+        550
+      ]
+    }
+  ],
+  "notes": "Two equal-frequency tones exercise FFT whitening and stamping with the source default squelch30. The common spectral component must survive near440Hz; the Hann/overlap FFT normalization prevents a narrow exact amplitude claim."
+}

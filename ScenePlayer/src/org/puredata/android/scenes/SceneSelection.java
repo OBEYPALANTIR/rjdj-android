@@ -11,7 +11,6 @@ package org.puredata.android.scenes;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import org.puredata.android.scenes.SceneDataBase.SceneColumn;
 import android.app.Activity;
@@ -23,6 +22,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -94,6 +94,10 @@ public class SceneSelection extends Activity implements OnItemClickListener, OnI
 		updateButton = new Button(this);
 		updateButton.setText(getResources().getString(R.string.update_label));
 		sceneView.addFooterView(updateButton);
+		Button noticesButton = new Button(this);
+		noticesButton.setText(R.string.notices_title);
+		sceneView.addFooterView(noticesButton);
+		noticesButton.setOnClickListener(view -> startActivity(new Intent(this, NoticesActivity.class)));
 		sceneView.setOnItemClickListener(this);
 		sceneView.setOnItemLongClickListener(this);
 		updateButton.setOnClickListener(this);
@@ -222,15 +226,19 @@ public class SceneSelection extends Activity implements OnItemClickListener, OnI
             File scene = null;
             boolean imported = false;
             File root = context.getDir("scenes", MODE_PRIVATE);
-            try (InputStream in = seed ? context.getResources().openRawResource(R.raw.atsuke)
-                    : context.getContentResolver().openInputStream(uri)) {
-                File sample = new File(root, "Atsuke.rj");
-                if (seed && sample.isDirectory()) {
-                    // Recover a process death between archive publication and database insertion.
-                    scene = sample;
+            try {
+                if (seed) {
+                    boolean existing = new File(root, "Atsuke.rj").isDirectory();
+                    String path = SceneTabs.seedDefault(context, root);
+                    if (path == null) return null;
+                    scene = new File(path);
+                    imported = !existing;
                 } else {
-                    scene = SceneArchive.importScene(in, root);
-                    imported = true;
+                    try (ParcelFileDescriptor archive = context.getContentResolver().openFileDescriptor(uri, "r")) {
+                        if (archive == null) throw new IOException("No archive was received");
+                        scene = new File(RjdjCore.importScene(archive.detachFd(), root.getAbsolutePath()));
+                        imported = true;
+                    }
                 }
                 SceneDataBase database = new SceneDataBase(context);
                 try { database.addScene(scene); }
@@ -239,7 +247,7 @@ public class SceneSelection extends Activity implements OnItemClickListener, OnI
                 return seed ? null : "Scene imported";
             } catch (Exception e) {
                 if (imported && scene != null) {
-                    try { SceneArchive.deleteOwnedTree(root, scene); }
+                    try { RjdjCore.deleteOwnedTree(root.getAbsolutePath(), scene.getAbsolutePath()); }
                     catch (IOException cleanup) { return "Import failed; private staging cleanup failed: " + cleanup.getMessage(); }
                 }
                 return "Unable to import scene: " + e.getMessage();

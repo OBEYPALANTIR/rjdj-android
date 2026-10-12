@@ -1,8 +1,263 @@
+import javax.inject.Inject
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
+
 apply plugin: 'com.android.application'
 
-dependencies {
-    implementation 'io.github.libpd.android:pd-core:' + rootProject.pdCoreVersion
+abstract class CargoNdkTask extends DefaultTask {
+    @Input
+    abstract Property<String> getProfile()
+
+    // Fingerprint only sources below, not Cargo's target/ output.
+    @Internal
+    abstract DirectoryProperty getCrateDir()
+
+    @InputFiles
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract ConfigurableFileCollection getSourceFiles()
+
+    @Input
+    abstract Property<String> getNdkDirectory()
+
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDir()
+
+    @Inject
+    abstract ExecOperations getExecOperations()
+
+    @TaskAction
+    void buildRust() {
+        def args = ['cargo', 'ndk', '-t', 'arm64-v8a', '-P', '28',
+                    '-o', outputDir.get().asFile.absolutePath, 'build']
+        if (profile.get() == 'release') {
+            args.add('--release')
+        }
+        def crate = crateDir.get().asFile
+        def ndk = ndkDirectory.get()
+        def cargoPath = "${System.getProperty('user.home')}/.cargo/bin" +
+                File.pathSeparator + (System.getenv('PATH') ?: '')
+        execOperations.exec {
+            workingDir crate
+            commandLine args
+            environment 'ANDROID_NDK_HOME', ndk
+            environment 'PATH', cargoPath
+        }
+    }
 }
+
+// Owner decision (2026-10-11): rj_* externals stay separate .so files loaded by Pd; this packaging choice does not establish or resolve their license, which remains unstated.
+abstract class BuildExternalsTask extends DefaultTask {
+    @Internal
+    abstract DirectoryProperty getSourceDir()
+
+    @Internal
+    abstract DirectoryProperty getLibpdDir()
+
+    @InputFiles
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract ConfigurableFileCollection getSourceFiles()
+
+    @InputDirectory
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract DirectoryProperty getCargoOutputDir()
+
+    @Input
+    abstract Property<String> getNdkDirectory()
+
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDir()
+
+    @Inject
+    abstract ExecOperations getExecOperations()
+
+    @TaskAction
+    void buildExternals() {
+        def ndk = new File(ndkDirectory.get())
+        def host = ['darwin-x86_64', 'linux-x86_64'].find {
+            new File(ndk, "toolchains/llvm/prebuilt/${it}/bin/clang").isFile()
+        }
+        if (host == null) {
+            throw new GradleException("NDK clang not found in ${ndk}")
+        }
+        def clang = new File(ndk, "toolchains/llvm/prebuilt/${host}/bin/clang")
+        def output = new File(outputDir.get().asFile, 'arm64-v8a')
+        if (!output.isDirectory() && !output.mkdirs()) {
+            throw new GradleException("Cannot create external output directory ${output}")
+        }
+        def core = new File(cargoOutputDir.get().asFile, 'arm64-v8a')
+        def libpd = libpdDir.get().asFile
+        def modules = [
+            rj_accum: 'rj_accum.c',
+            rj_senergy_tilde: 'rj_senergy~.c',
+            rj_barkflux_accum_tilde: 'rj_barkflux_accum~.c',
+            rj_centroid_tilde: 'rj_centroid~.c',
+            rj_zcr_tilde: 'rj_zcr~.c'
+        ]
+        modules.each { module, source ->
+            def args = [clang.absolutePath, '--target=aarch64-linux-android28',
+                        '-DPD', '-shared', '-fPIC', '-O2',
+                        '-Wl,-z,max-page-size=16384', '-Wl,--no-undefined',
+                        new File(sourceDir.get().asFile, source).absolutePath,
+                        '-o', new File(output, "lib${module}.so").absolutePath,
+                        "-L${core.absolutePath}", '-lrjdjcore',
+                        "-I${new File(libpd, 'pure-data/src').absolutePath}",
+                        "-I${new File(libpd, 'libpd_wrapper').absolutePath}", '-llog', '-lm']
+            execOperations.exec { commandLine args }
+        }
+    }
+}
+
+abstract class PdExtraResourcesTask extends org.gradle.api.tasks.bundling.Zip {
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDir()
+}
+
+abstract class GenerateNoticesTask extends DefaultTask {
+    @Internal
+    abstract DirectoryProperty getRepositoryDir()
+
+    @InputFiles
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract ConfigurableFileCollection getSourceFiles()
+
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDir()
+
+    @Inject
+    abstract ExecOperations getExecOperations()
+
+    @TaskAction
+    void generate() {
+        def root = repositoryDir.get().asFile
+        def supplemental = new File(root, 'ScenePlayer/res/raw/notices_rust.txt').getText('UTF-8')
+        def cargoPath = "${System.getProperty('user.home')}/.cargo/bin" +
+                File.pathSeparator + (System.getenv('PATH') ?: '')
+        def compiler = new ByteArrayOutputStream()
+        execOperations.exec {
+            commandLine 'rustc', '--version'
+            environment 'PATH', cargoPath
+            standardOutput = compiler
+        }
+        def rustVersion = compiler.toString('UTF-8').split(' ')[1]
+        if (!supplemental.contains("=== Rust COPYRIGHT (${rustVersion}) ===")) {
+            throw new GradleException("Refresh notices_rust.txt for rustc ${rustVersion}")
+        }
+        def metadataBytes = new ByteArrayOutputStream()
+        execOperations.exec {
+            workingDir new File(root, 'rust/rjdj-core')
+            commandLine 'cargo', 'metadata', '--locked', '--offline',
+                    '--filter-platform', 'aarch64-linux-android', '--format-version', '1'
+            environment 'PATH', cargoPath
+            standardOutput = metadataBytes
+        }
+        def metadata = new groovy.json.JsonSlurper().parseText(metadataBytes.toString('UTF-8'))
+        def resolved = metadata.resolve.nodes.collect { it.id }.toSet()
+        def notices = new StringBuilder('Notices\n\n')
+        def add = { String title, String text ->
+            notices.append(title).append('\n').append(text).append('\n\n')
+        }
+        add('Trademark', 'RjDj is a trademark of its respective owner; this independent revival is not affiliated with or endorsed by the original developers. Trademark registers were not queried for this build.')
+        add('pd-for-android ScenePlayer host',
+                new File(root, 'ScenePlayer/LICENSE.txt').getText('UTF-8'))
+        def libpd = new File(root, 'PdCore/pd-core/src/main/jni/libpd')
+        add('libpd', new File(libpd, 'LICENSE.txt').getText('UTF-8'))
+        add('Pure Data', new File(libpd, 'pure-data/LICENSE.txt').getText('UTF-8'))
+        add('Pd extra/ abstractions shipped as extra_abs',
+                'complex-mod~.pd, hilbert~.pd, rev1-final.pd, rev1-stage.pd, rev1~.pd, rev2~.pd, rev3~.pd\n' +
+                new File(libpd, 'pure-data/LICENSE.txt').getText('UTF-8'))
+        ['atsuke', 'abstractions'].each { archive ->
+            def zip = new java.util.zip.ZipFile(new File(root, "ScenePlayer/res/raw/${archive}.zip"))
+            try {
+                zip.entries().toList().findAll {
+                    !it.directory && it.name.tokenize('/').last() ==~ /(?i)(license|copying|readme)(\..*)?/
+                }.sort { it.name }.each { entry ->
+                    zip.getInputStream(entry).withCloseable { input ->
+                        add("${archive}.zip: ${entry.name}", input.getText('UTF-8'))
+                    }
+                }
+            } finally {
+                zip.close()
+            }
+        }
+        add('Five rj_* externals', 'License unstated: the rj_accum, rj_barkflux_accum~, rj_centroid~, rj_senergy~ and rj_zcr~ externals carry no license text in their sources; they are packaged as separate libraries and their terms remain unresolved.')
+        add('Rust crates', 'Versions and declared SPDX licenses below are resolved from Cargo.lock for aarch64-linux-android, including build-time dependencies. MIT is selected where offered; otherwise Apache-2.0 or Zlib applies. Required Unicode-3.0 terms are also reproduced. Shared MIT and Apache-2.0 terms appear once; crate-specific copyright preambles remain below.')
+        def core = metadata.packages.find { it.name == 'rjdj-core' && it.source == null }
+        add("${core.name} ${core.version}: ${core.license}",
+                'SPDX license declared in Cargo.toml. Its license file is to be added by the owner; no copyright holder is attributed here.')
+        def mitText = supplemental.split('=== MIT ===\n', 2)[1].split('\n\n=== Apache-2.0 ===', 2)[0]
+        def mitBody = mitText.substring(mitText.indexOf('Permission is hereby granted'))
+        def normalize = { String text -> text.replaceAll(/\s+/, ' ').trim() }
+        metadata.packages.findAll { resolved.contains(it.id) && it.source != null }
+                .sort { a, b -> "${a.name} ${a.version}" <=> "${b.name} ${b.version}" }.each { crate ->
+            def label = "${crate.name} ${crate.version}"
+            def directory = new File(crate.manifest_path).parentFile
+            def files = directory.listFiles().findAll {
+                it.isFile() && it.name ==~ /(?i)(LICENSE|COPYING|NOTICE).*/
+            }.sort { it.name }
+            def license = crate.license ?: ''
+            if (license.contains(' AND ') && license != '(MIT OR Apache-2.0) AND Unicode-3.0') {
+                throw new GradleException("Review compound license for ${label}: ${license}")
+            }
+            def selected = license.contains('MIT') ? 'MIT' :
+                    license == 'Apache-2.0' ? 'Apache-2.0' : license == 'Zlib' ? 'Zlib' : null
+            if (selected == null) throw new GradleException("Review license for ${label}: ${license}")
+            add("${label}: ${license}", "Selected: ${selected}")
+            if (files.isEmpty()) {
+                if (selected != 'MIT' || !supplemental.contains("=== ${label} ===")) {
+                    throw new GradleException("Missing license text for ${label}; add pinned upstream text to notices_rust.txt")
+                }
+                add(label, 'Pinned upstream copyright preamble is in the supplemental notices below; shared MIT terms apply.')
+            } else if (selected == 'MIT') {
+                def file = files.find { it.getText('UTF-8').contains('Permission is hereby granted') }
+                if (file == null) throw new GradleException("Missing MIT license text for ${label}")
+                def text = file.getText('UTF-8')
+                def start = text.indexOf('Permission is hereby granted')
+                if (normalize(text.substring(start)) == normalize(mitBody)) {
+                    add("${label}: ${file.name} (shared MIT terms)", text.substring(0, start))
+                } else {
+                    // Nonstandard license variants must remain verbatim, not be silently replaced.
+                    add("${label}: ${file.name}", text)
+                }
+            } else if (selected == 'Zlib') {
+                def file = files.find { it.name.startsWith('LICENSE') }
+                if (file == null) throw new GradleException("Missing Zlib license text for ${label}")
+                add("${label}: ${file.name}", file.getText('UTF-8'))
+            } else {
+                def file = files.find { it.name == 'COPYING' || it.name.toUpperCase().contains('APACHE') }
+                if (file == null || !supplemental.contains(file.getText('UTF-8'))) {
+                    throw new GradleException("Refresh shared Apache-2.0 terms for ${label}")
+                }
+            }
+            files.findAll { it.name.toUpperCase().contains('UNICODE') || it.name.startsWith('NOTICE') }.each {
+                add("${label}: ${it.name}", it.getText('UTF-8'))
+            }
+            if (license.contains('Unicode-3.0') && !files.any { it.name.toUpperCase().contains('UNICODE') }) {
+                throw new GradleException("Missing required Unicode-3.0 license for ${label}")
+            }
+        }
+        add('Rust standard library and supplemental upstream notices', supplemental)
+        if (!notices.toString().contains('GNU GENERAL PUBLIC LICENSE') ||
+                !notices.toString().contains('Version 3, 29 June 2007')) {
+            throw new GradleException('Bundled scene GPLv3 license is missing')
+        }
+        def output = new File(outputDir.get().asFile, 'raw/notices.txt')
+        if (!output.parentFile.isDirectory() && !output.parentFile.mkdirs()) {
+            throw new GradleException("Cannot create notices output directory ${output.parentFile}")
+        }
+        output.setText(notices.toString(), 'UTF-8')
+    }
+}
+
 
 android {
     compileSdk = rootProject.compileSdk
@@ -17,6 +272,9 @@ android {
         versionCode 12
         versionName '0.10.0'
         testInstrumentationRunner 'org.puredata.android.scenes.SceneEngineInstrumentation'
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
     }
 
     sourceSets {
@@ -50,29 +308,73 @@ android {
     }
 
     buildFeatures {
-        // Extract native libs from prefab, to be able to access the headers and to link to the libs
-        prefab = true
         viewBinding = true
     }
 
-    defaultConfig {
-        externalNativeBuild {
-            ndkBuild {
-                // NDK make's output synchronization crashes on macOS 27.
-                arguments '-j' + gradle.startParameter.maxWorkerCount, '--output-sync=none'
-            }
-        }
-    }
+}
 
-    externalNativeBuild {
-        ndkBuild {
-            path 'jni/Android.mk'
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        def crateDirectory = rootProject.layout.projectDirectory.dir('rust/rjdj-core')
+        def libpdDirectory = rootProject.layout.projectDirectory.dir('PdCore/pd-core/src/main/jni/libpd')
+        def ndkPath = androidComponents.sdkComponents.ndkDirectory.map { it.asFile.absolutePath }
+        def rustSources = crateDirectory.asFileTree.matching {
+            include 'Cargo.toml', 'Cargo.lock', 'build.rs', 'src/**', '.cargo/**'
         }
+        def pdSources = fileTree(libpdDirectory.asFile) {
+            include '**/*.c', '**/*.h'
+        }
+        def cargoTask = tasks.register("cargoNdk${variant.name.capitalize()}", CargoNdkTask) {
+            profile.set(variant.buildType == 'release' ? 'release' : 'debug')
+            crateDir.set(crateDirectory)
+            sourceFiles.from(rustSources, pdSources)
+            ndkDirectory.set(ndkPath)
+            outputDir.set(layout.buildDirectory.dir("rust/${variant.name}"))
+        }
+        variant.sources.jniLibs?.addGeneratedSourceDirectory(cargoTask, { t -> t.outputDir })
+        def externalsTask = tasks.register("buildExternals${variant.name.capitalize()}", BuildExternalsTask) {
+            dependsOn cargoTask
+            sourceDir.set(layout.projectDirectory.dir('jni'))
+            libpdDir.set(libpdDirectory)
+            sourceFiles.from(fileTree('jni') { include '*.c' },
+                    fileTree(libpdDirectory.asFile) { include '**/*.h' })
+            cargoOutputDir.set(cargoTask.flatMap { it.outputDir })
+            ndkDirectory.set(ndkPath)
+            outputDir.set(layout.buildDirectory.dir("externals/${variant.name}"))
+        }
+        variant.sources.jniLibs?.addGeneratedSourceDirectory(externalsTask, { t -> t.outputDir })
+        def extrasTask = tasks.register("packagePdExtras${variant.name.capitalize()}", PdExtraResourcesTask) {
+            outputDir.set(layout.buildDirectory.dir("generated/pdExtras/${variant.name}"))
+            destinationDirectory.set(outputDir.dir('raw'))
+            archiveFileName.set('extra_abs.zip')
+            includeEmptyDirs = false
+            from(fileTree(libpdDirectory.dir('pure-data/extra').asFile) {
+                // Match PdCore's checked-in extra_abs.zip, excluding help patches.
+                include 'complex-mod~.pd', 'hilbert~.pd', 'rev1-final.pd', 'rev1-stage.pd',
+                        'rev1~.pd', 'rev2~.pd', 'rev3~.pd'
+            })
+        }
+        variant.sources.res?.addGeneratedSourceDirectory(extrasTask, { t -> t.outputDir })
+        def noticesTask = tasks.register("generateNotices${variant.name.capitalize()}", GenerateNoticesTask) {
+            dependsOn cargoTask
+            repositoryDir.set(rootProject.layout.projectDirectory)
+            sourceFiles.from(crateDirectory.file('Cargo.lock'), file('LICENSE.txt'),
+                    file('res/raw/atsuke.zip'), file('res/raw/abstractions.zip'),
+                    file('res/raw/notices_rust.txt'), libpdDirectory.file('LICENSE.txt'),
+                    libpdDirectory.file('pure-data/LICENSE.txt'))
+            // Registry license files and the active Rust toolchain may change independently.
+            outputs.upToDateWhen { false }
+            outputDir.set(layout.buildDirectory.dir("generated/notices/${variant.name}"))
+        }
+        variant.sources.res?.addGeneratedSourceDirectory(noticesTask, { t -> t.outputDir })
     }
 }
 
 tasks.register('checkSceneFiles', Exec) {
-    commandLine 'sh', 'test/check-scenes.sh'
+    workingDir rootProject.layout.projectDirectory.asFile
+    commandLine 'cargo', 'test', '--manifest-path', 'rust/rjdj-core/Cargo.toml'
+    environment 'PATH', "${System.getProperty('user.home')}/.cargo/bin" +
+            File.pathSeparator + (System.getenv('PATH') ?: '')
 }
 
 tasks.named('check').configure { dependsOn 'checkSceneFiles' }

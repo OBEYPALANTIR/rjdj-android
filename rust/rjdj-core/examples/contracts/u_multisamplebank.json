@@ -1,0 +1,75 @@
+{
+  "name": "u_multisamplebank",
+  "args": [
+    "rjqa_multi"
+  ],
+  "source": "rj/u_multisamplebank-help.pd:30-59 + rj/u_multisamplebank.pd:6-81,89-100,134-184",
+  "duration_ms": 100,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        "open",
+        "sine440_1s.wav",
+        2
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        2
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 30,
+      "message": [
+        "dump"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "size",
+        2
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 1,
+      "type": "any",
+      "exact": [
+        [
+          "rjqa_multi-2"
+        ]
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "any",
+      "exact": [
+        [
+          2,
+          "rjqa_multi-2"
+        ],
+        [
+          "size",
+          2,
+          22050
+        ]
+      ]
+    }
+  ],
+  "notes": "Load an actual generated mono WAV at index2. The abstraction dynamically creates the named table and fills it via soundfiler. Hot index lookup must return the generated basename, inlet1 dump exposes the index/name map, and size reports22050 frames. This certifies runtime message-created table classes, not merely a help load.",
+  "files": [
+    "generated:sine440_1s.wav"
+  ]
+}

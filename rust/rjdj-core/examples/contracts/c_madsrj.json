@@ -1,0 +1,83 @@
+{
+  "name": "c_madsrj",
+  "args": [
+    "myadsr",
+    50,
+    80,
+    70,
+    300
+  ],
+  "source": "rj/c_madsrj-help.pd:18-46 + rj/c_madsrj.pd:2-25",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "A",
+        50
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "D",
+        80
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "S",
+        70
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "R",
+        300
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        127
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 400,
+      "message": [
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 3,
+      "type": "list",
+      "exact": [
+        [
+          1,
+          50
+        ],
+        [
+          0.7,
+          80
+        ],
+        [
+          0,
+          300
+        ]
+      ]
+    }
+  ],
+  "notes": "Velocity 127 is normalized to peak 1; dispatched A/D/S/R settings produce the same line-compatible ADSR target pairs as the plain message abstraction."
+}

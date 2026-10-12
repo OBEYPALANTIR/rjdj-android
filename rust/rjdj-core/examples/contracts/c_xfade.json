@@ -1,0 +1,47 @@
+{
+  "name": "c_xfade",
+  "args": [],
+  "source": "rj/c_xfade-help.pd:18-30 + rj/c_xfade.pd:2-16",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 400
+      }
+    },
+    {
+      "inlet": 1,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 800
+      }
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        0.5,
+        10
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.24,
+        0.26
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    }
+  ],
+  "notes": "Linear crossfade at 0.5 applies half-gain to each orthogonal 0.5-amplitude sine, predicting RMS 0.25 after the 10 ms interpolation."
+}

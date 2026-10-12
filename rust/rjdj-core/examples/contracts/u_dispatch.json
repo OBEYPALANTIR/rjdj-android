@@ -1,0 +1,62 @@
+{
+  "name": "u_dispatch",
+  "args": [
+    "rjqa_dispatch",
+    "attack"
+  ],
+  "source": "rj/u_dispatch-help.pd:16-31 + rj/u_dispatch.pd:2-15",
+  "duration_ms": 100,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        "attack",
+        20
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "other",
+        7
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        "attack",
+        40
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "other",
+        9
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "any",
+      "exact": [
+        [
+          "other",
+          7
+        ],
+        [
+          "other",
+          9
+        ]
+      ]
+    }
+  ],
+  "notes": "Matching attack messages are stripped and sent to rjqa_dispatch-attack, never to the outlet. Nonmatching other messages pass through unchanged. A matching message precedes each expected passthrough, so an incorrect leak changes the observed prefix. State persistence and destination receiver side effects are not outlet assertions."
+}

@@ -1,0 +1,13 @@
+#N canvas 0 0 600 350 10;
+#X obj 20 20 r #transport;
+#X obj 20 80 s transport_echo;
+#X obj 180 20 r #micvolume;
+#X obj 180 80 s mic_echo;
+#X obj 20 140 r #touch;
+#X obj 20 200 s touch_echo;
+#X obj 180 140 r #accelerate;
+#X obj 180 200 s accelerate_echo;
+#X connect 0 0 1 0;
+#X connect 2 0 3 0;
+#X connect 4 0 5 0;
+#X connect 6 0 7 0;

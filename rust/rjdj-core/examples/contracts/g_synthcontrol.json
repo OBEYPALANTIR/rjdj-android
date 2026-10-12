@@ -1,0 +1,60 @@
+{
+  "name": "g_synthcontrol",
+  "args": [],
+  "source": "rj/g_synthcontrol-help.pd:7-29,38-42 + rj/g_synthcontrol.pd:5-15,146-158",
+  "duration_ms": 250,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "env1a",
+        0.25
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "mod2d",
+        0.5
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 60,
+      "message": [
+        "env1r",
+        "label",
+        "Release"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 80,
+      "message": [
+        "osc3c",
+        "color",
+        128
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "exact": [
+        [
+          "env1a",
+          0.25
+        ],
+        [
+          "mod2d",
+          0.5
+        ]
+      ]
+    }
+  ],
+  "notes": "36 chained g_synsl widgets pass numeric controller values and consume matching label/color configuration. Public inlet/outlet contract is exact controller passthrough; graphical appearance and mouse gestures are outside this headless test."
+}

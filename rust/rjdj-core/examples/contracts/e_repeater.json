@@ -1,0 +1,89 @@
+{
+  "name": "e_repeater",
+  "args": [
+    "repea"
+  ],
+  "source": "rj/e_repeater-help.pd:19-35 + rj/e_repeater.pd:2-36",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "feedback",
+        0.5
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "num",
+        4
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "dry",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        100
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.31,
+        0.38
+      ],
+      "window_ms": [
+        30,
+        90
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.14,
+        0.21
+      ],
+      "window_ms": [
+        150,
+        190
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        500,
+        1000
+      ],
+      "silent": true
+    }
+  ],
+  "notes": "A float records a 100 ms chunk; fully wet audio includes that recording window then the 0.5-feedback first repeat. Four repetitions shut the feedback off after (num-1)*chunk duration; the delay buffer must become silent by 500 ms although the external sine continues. No external wav is used."
+}

@@ -1,0 +1,42 @@
+{
+  "name": "e_forcepitch",
+  "args": [],
+  "source": "rj/e_forcepitch-help.pd:3-13 + rj/e_forcepitch.pd:2,22-36",
+  "duration_ms": 1500,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 220
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        69
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.15,
+        0.65
+      ],
+      "window_ms": [
+        700,
+        1500
+      ],
+      "centroid_hz": [
+        380,
+        500
+      ]
+    }
+  ],
+  "notes": "sigmund~ analyzes the 220 Hz input (MIDI 57); requested MIDI 69 forces an octave-up 440 Hz output after detector and pitch-shifter latency. Spectral band distinguishes real transposition from a dry copy."
+}
