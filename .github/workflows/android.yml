@@ -29,6 +29,7 @@ jobs:
       uses: dtolnay/rust-toolchain@1.96.1
       with:
         targets: aarch64-linux-android
+        components: clippy
     - run: |
         git submodule sync --recursive
         git submodule update --init --recursive
@@ -39,7 +40,9 @@ jobs:
     - name: Install cargo-ndk
       run: cargo install cargo-ndk --version 4.1.2 --locked
     - name: Check Rust core
-      run: cargo test --manifest-path rust/rjdj-core/Cargo.toml
+      run: |
+        cargo clippy --manifest-path rust/rjdj-core/Cargo.toml --all-targets -- -D warnings
+        cargo test --manifest-path rust/rjdj-core/Cargo.toml
     - run: ./gradlew :ScenePlayer:assembleDebug :ScenePlayer:assembleDebugAndroidTest :ScenePlayer:lintDebug --max-workers=2
     - name: Check 16 KB alignment
       shell: bash
