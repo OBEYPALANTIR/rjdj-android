@@ -570,22 +570,21 @@ extern "system" fn send_mic_volume(mut unowned: EnvUnowned<'_>, _class: JClass<'
     });
 }
 
-fn record_scene(path: &str) -> CoreResult<Command> {
+fn record_start(path: &str) -> CoreResult<Command> {
     if path.is_empty() || path.as_bytes().contains(&0) {
         return Err(CoreError::new("Invalid recording path"));
     }
     let path =
         ArrayString::try_from(path).map_err(|_| CoreError::new("Recording path is too long"))?;
-    Ok(Command::RecordScene(path))
+    Ok(Command::RecordStart(path))
 }
 
 fn send_record_commands(path: Option<&str>, mut send: impl FnMut(Command) -> bool) -> CoreResult<bool> {
-    if let Some(path) = path {
-        if !send(record_scene(path)?) {
-            return Ok(false);
-        }
-    }
-    Ok(send(Command::Record(path.is_some())))
+    let command = match path {
+        Some(path) => record_start(path)?,
+        None => Command::Record(false),
+    };
+    Ok(send(command))
 }
 
 extern "system" fn send_record(
@@ -751,17 +750,39 @@ mod tests {
 
     #[test]
     fn recording_paths_are_never_truncated_or_sent_with_nul() {
-        assert!(record_scene("").is_err());
-        assert!(record_scene("/private/record\0.wav").is_err());
-        assert!(record_scene(&"x".repeat(1025)).is_err());
-        match record_scene(&"x".repeat(1024)).unwrap() {
-            Command::RecordScene(path) => assert_eq!(path.len(), 1024),
+        assert!(record_start("").is_err());
+        assert!(record_start("/private/record\0.wav").is_err());
+        assert!(record_start(&"x".repeat(1025)).is_err());
+        match record_start(&"x".repeat(1024)).unwrap() {
+            Command::RecordStart(path) => assert_eq!(path.len(), 1024),
             _ => panic!("Wrong recording command"),
         }
-        match record_scene("/private/音.wav").unwrap() {
-            Command::RecordScene(path) => assert_eq!(path.as_str(), "/private/音.wav"),
+        match record_start("/private/音.wav").unwrap() {
+            Command::RecordStart(path) => assert_eq!(path.as_str(), "/private/音.wav"),
             _ => panic!("Wrong recording command"),
         }
+    }
+
+    #[test]
+    fn record_start_sends_one_command_even_with_only_one_queue_slot() {
+        let (queue, mut consumer) = crate::pd::engine::CommandQueue::new();
+        for _ in 0..255 {
+            assert!(queue.push(Command::MicVolume(1.0)));
+        }
+        assert!(send_record_commands(Some("/private/音.wav"), |command| queue.push(command)).unwrap());
+        assert!(
+            !send_record_commands(Some("/private/rejected.wav"), |command| queue.push(command))
+                .unwrap()
+        );
+        assert_eq!(queue.dropped(), 1);
+        for _ in 0..255 {
+            assert!(matches!(consumer.pop(), Ok(Command::MicVolume(1.0))));
+        }
+        assert!(matches!(
+            consumer.pop(),
+            Ok(Command::RecordStart(path)) if path.as_str() == "/private/音.wav"
+        ));
+        assert!(consumer.pop().is_err());
     }
 
     #[test]
@@ -772,6 +793,11 @@ mod tests {
         }
         assert!(!send_record_commands(None, |command| queue.push(command)).unwrap());
         assert_eq!(queue.dropped(), 1);
+        assert!(
+            !send_record_commands(Some("/private/record.wav"), |command| queue.push(command))
+                .unwrap()
+        );
+        assert_eq!(queue.dropped(), 2);
         for _ in 0..256 {
             assert!(matches!(consumer.pop(), Ok(Command::MicVolume(1.0))));
         }

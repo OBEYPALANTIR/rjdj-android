@@ -9,7 +9,7 @@ use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::os::unix::fs::DirBuilderExt;
 use std::path::{Component, Path, PathBuf};
 use zip::read::read_zipfile_from_stream_with_options;
-use zip::{ZipArchive, ZipReadOptions};
+use zip::ZipReadOptions;
 
 pub const MAX_ENTRIES: usize = 4096;
 pub const MAX_ENTRY_BYTES: u64 = 64 * 1024 * 1024;
@@ -99,15 +99,8 @@ fn stage(root: &Path) -> Result<PathBuf> {
 }
 
 fn extract(spool: &mut File, staging: &Path) -> Result<()> {
-    preflight_entry_count(spool)?;
-    spool.seek(SeekFrom::Start(0))?;
-    let zip = ZipArchive::new(spool.try_clone()?).map_err(|_| CoreError::new(ONE_SCENE))?;
-    check_central_entries(spool, zip.central_directory_start())?;
-    let mut entries = Vec::with_capacity(zip.len());
-    for index in 0..zip.len() {
-        let entry = zip.by_index_data(index).map_err(zip_error)?;
-        entries.push((entry.header_start(), entry.compressed_size(), entry.crc32()));
-    }
+    let (start, count) = find_central_directory(spool)?;
+    let mut entries = check_central_entries(spool, start, count)?;
     entries.sort_unstable_by_key(|entry| entry.0);
     let mut paths = HashSet::new();
     let mut total = 0u64;
@@ -190,103 +183,185 @@ fn validate_name(name: &str) -> Result<()> {
     Ok(())
 }
 
-fn preflight_entry_count(spool: &mut File) -> Result<()> {
-    // zip retries earlier footers, so scan the raw-capped spool with constant-size storage.
+fn find_central_directory(spool: &mut File) -> Result<(u64, u64)> {
     let length = spool.seek(SeekFrom::End(0))?;
     let mut buffer = [0; 8192];
-    let mut start = 0;
-    while start < length {
-        let size = (length - start).min(buffer.len() as u64) as usize;
+    let mut end = length;
+    while end != 0 {
+        let start = end.saturating_sub(buffer.len() as u64);
+        let size = (end - start) as usize;
         spool.seek(SeekFrom::Start(start))?;
         spool.read_exact(&mut buffer[..size])?;
-        for (offset, magic) in buffer[..size].windows(4).enumerate() {
-            let position = start + offset as u64;
-            let count = if magic == b"PK\x05\x06" && length - position >= 22 {
-                let mut header = [0; 18];
-                spool.seek(SeekFrom::Start(position + 4))?;
-                spool.read_exact(&mut header)?;
-                let comment = u16::from_le_bytes([header[16], header[17]]) as u64;
-                if comment > length - position - 22 {
-                    continue;
-                }
-                let on_disk = u16::from_le_bytes([header[4], header[5]]);
-                let total = u16::from_le_bytes([header[6], header[7]]);
-                let may_be_zip64 = total == u16::MAX
-                    || header[8..12] == [0xff; 4]
-                    || header[12..16] == [0xff; 4];
-                if may_be_zip64 && position >= 20 {
-                    let mut locator = [0; 4];
-                    spool.seek(SeekFrom::Start(position - 20))?;
-                    spool.read_exact(&mut locator)?;
-                    if locator == *b"PK\x06\x07" {
-                        // ZIP64 counts, not the classic sentinel fields, control allocation.
-                        continue;
-                    }
-                }
-                u64::from(total.max(on_disk))
-            } else if magic == b"PK\x06\x06" && length - position >= 76 {
-                let mut record_size = [0; 8];
-                spool.seek(SeekFrom::Start(position + 4))?;
-                spool.read_exact(&mut record_size)?;
-                let record_size = u64::from_le_bytes(record_size);
-                if record_size < 44 || record_size > length - position - 32 {
-                    continue;
-                }
-                let mut locator = [0; 4];
-                spool.seek(SeekFrom::Start(position + 12 + record_size))?;
-                spool.read_exact(&mut locator)?;
-                if locator != *b"PK\x06\x07" {
-                    continue;
-                }
-                let mut on_disk = [0; 8];
-                let mut total = [0; 8];
-                spool.seek(SeekFrom::Start(position + 24))?;
-                spool.read_exact(&mut on_disk)?;
-                spool.read_exact(&mut total)?;
-                u64::from_le_bytes(total).max(u64::from_le_bytes(on_disk))
-            } else {
+        for (offset, magic) in buffer[..size].windows(4).enumerate().rev() {
+            if magic != b"PK\x05\x06" {
                 continue;
-            };
-            if count > MAX_ENTRIES as u64 {
-                return Err(CoreError::new("Archive contains too many entries"));
+            }
+            if let Some((directory, count)) =
+                central_directory_at(spool, start + offset as u64, length)
+            {
+                if count > MAX_ENTRIES as u64 {
+                    return Err(CoreError::new("Archive contains too many entries"));
+                }
+                return Ok((directory, count));
             }
         }
-        if start + size as u64 == length {
+        if start == 0 {
             break;
         }
-        start += (size - 3) as u64; // Preserve signatures spanning adjacent scan buffers.
+        end = start + 3; // Preserve signatures spanning adjacent scan buffers.
     }
-    Ok(())
+    Err(CoreError::new(ONE_SCENE))
 }
 
-fn check_central_entries(spool: &mut File, start: u64) -> Result<()> {
-    // ZipArchive deduplicates exact names, so check the raw records before using its index.
-    spool.seek(SeekFrom::Start(start))?;
-    let mut names = HashSet::new();
-    let mut count = 0;
-    loop {
-        let mut magic = [0; 4];
-        spool.read_exact(&mut magic)?;
-        if magic != *b"PK\x01\x02" {
-            break;
+fn central_directory_at(
+    spool: &mut (impl Read + Seek),
+    position: u64,
+    length: u64,
+) -> Option<(u64, u64)> {
+    if length.checked_sub(position)? < 22 {
+        return None;
+    }
+    let mut header = [0; 22];
+    spool.seek(SeekFrom::Start(position)).ok()?;
+    spool.read_exact(&mut header).ok()?;
+    let comment = u16::from_le_bytes([header[20], header[21]]) as u64;
+    if header[..4] != *b"PK\x05\x06" || comment > length - position - 22 {
+        return None;
+    }
+    let on_disk = u16::from_le_bytes([header[8], header[9]]);
+    let total = u16::from_le_bytes([header[10], header[11]]);
+    let may_be_zip64 =
+        total == u16::MAX || header[12..16] == [0xff; 4] || header[16..20] == [0xff; 4];
+    if may_be_zip64 && position >= 20 {
+        let locator_position = position - 20;
+        let mut locator = [0; 20];
+        spool.seek(SeekFrom::Start(locator_position)).ok()?;
+        spool.read_exact(&mut locator).ok()?;
+        if locator[..4] == *b"PK\x06\x07" {
+            let record_position = u64::from_le_bytes(locator[8..16].try_into().ok()?);
+            let disks = u32::from_le_bytes(locator[16..20].try_into().ok()?);
+            if disks > 1 || locator_position.checked_sub(record_position)? < 56 {
+                return None;
+            }
+            let mut record = [0; 56];
+            spool.seek(SeekFrom::Start(record_position)).ok()?;
+            spool.read_exact(&mut record).ok()?;
+            let record_size = u64::from_le_bytes(record[4..12].try_into().ok()?);
+            // Check the actual locator boundary without reading the extensible data sector.
+            if record[..4] != *b"PK\x06\x06"
+                || record_size < 44
+                || record_size.checked_add(12)? != locator_position - record_position
+                || record[16..20] != record[20..24]
+                || record[20..24] != locator[4..8]
+            {
+                return None;
+            }
+            let on_disk = u64::from_le_bytes(record[24..32].try_into().ok()?);
+            let total = u64::from_le_bytes(record[32..40].try_into().ok()?);
+            let directory = u64::from_le_bytes(record[48..56].try_into().ok()?);
+            if record_position < directory.saturating_add(total.saturating_mul(46)) {
+                return None;
+            }
+            return Some((directory, total.max(on_disk)));
         }
-        count += 1;
-        if count > MAX_ENTRIES {
+    }
+    let directory = u32::from_le_bytes(header[16..20].try_into().ok()?) as u64;
+    if header[4..6] != header[6..8] || directory >= position {
+        return None;
+    }
+    let mut magic = [0; 4];
+    spool.seek(SeekFrom::Start(directory)).ok()?;
+    spool.read_exact(&mut magic).ok()?;
+    (magic == *b"PK\x01\x02").then_some((directory, u64::from(total.max(on_disk))))
+}
+
+fn check_central_entries(
+    spool: &mut File,
+    start: u64,
+    declared_count: u64,
+) -> Result<Vec<(u64, u64, u32)>> {
+    spool.seek(SeekFrom::Start(start))?;
+    let length = spool.metadata()?.len();
+    let mut names = HashSet::new();
+    let mut entries = Vec::with_capacity(declared_count.min(MAX_ENTRIES as u64) as usize);
+    for _ in 0..declared_count {
+        if entries.len() == MAX_ENTRIES {
             return Err(CoreError::new("Archive contains too many entries"));
         }
+        let mut magic = [0; 4];
+        spool
+            .read_exact(&mut magic)
+            .map_err(|_| CoreError::new(ONE_SCENE))?;
+        if magic != *b"PK\x01\x02" {
+            return Err(CoreError::new(ONE_SCENE));
+        }
         let mut header = [0; 42];
-        spool.read_exact(&mut header)?;
+        spool
+            .read_exact(&mut header)
+            .map_err(|_| CoreError::new(ONE_SCENE))?;
         let name_length = u16::from_le_bytes([header[24], header[25]]) as usize;
-        let extra_length = u16::from_le_bytes([header[26], header[27]]) as i64;
-        let comment_length = u16::from_le_bytes([header[28], header[29]]) as i64;
+        let extra_length = u16::from_le_bytes([header[26], header[27]]) as u64;
+        let comment_length = u16::from_le_bytes([header[28], header[29]]) as u64;
         let mut name = vec![0; name_length];
-        spool.read_exact(&mut name)?;
+        spool
+            .read_exact(&mut name)
+            .map_err(|_| CoreError::new(ONE_SCENE))?;
         if !names.insert(name) {
             return Err(CoreError::new("Duplicate archive entry"));
         }
-        spool.seek(SeekFrom::Current(extra_length + comment_length))?;
+        let crc = u32::from_le_bytes([header[12], header[13], header[14], header[15]]);
+        let mut fields = [0; 3]; // Uncompressed size, compressed size, local-header offset.
+        for (field, offset) in fields.iter_mut().zip([20, 16, 38]) {
+            let mut bytes = [0; 4];
+            bytes.copy_from_slice(&header[offset..offset + 4]);
+            *field = u32::from_le_bytes(bytes) as u64;
+        }
+        let mut extra_position = spool.stream_position()?;
+        let extra_end = extra_position + extra_length;
+        if extra_end + comment_length > length {
+            return Err(CoreError::new(ONE_SCENE));
+        }
+        if fields.contains(&(u32::MAX as u64)) {
+            let mut found = false;
+            while extra_position + 4 <= extra_end {
+                let mut extra = [0; 4];
+                spool
+                    .read_exact(&mut extra)
+                    .map_err(|_| CoreError::new(ONE_SCENE))?;
+                let size = u16::from_le_bytes([extra[2], extra[3]]) as u64;
+                let field_end = extra_position + 4 + size;
+                if field_end > extra_end {
+                    return Err(CoreError::new(ONE_SCENE));
+                }
+                if extra[..2] == [1, 0] {
+                    let mut position = extra_position + 4;
+                    for field in &mut fields {
+                        if *field == u32::MAX as u64 {
+                            if position + 8 > field_end {
+                                return Err(CoreError::new(ONE_SCENE));
+                            }
+                            let mut bytes = [0; 8];
+                            spool
+                                .read_exact(&mut bytes)
+                                .map_err(|_| CoreError::new(ONE_SCENE))?;
+                            *field = u64::from_le_bytes(bytes);
+                            position += 8;
+                        }
+                    }
+                    found = true;
+                    break;
+                }
+                spool.seek(SeekFrom::Start(field_end))?;
+                extra_position = field_end;
+            }
+            if !found {
+                return Err(CoreError::new(ONE_SCENE));
+            }
+        }
+        spool.seek(SeekFrom::Start(extra_end + comment_length))?;
+        entries.push((fields[2], fields[1], crc));
     }
-    Ok(())
+    Ok(entries)
 }
 
 fn find_scenes(folder: &Path, scenes: &mut Vec<PathBuf>) -> Result<()> {
@@ -389,4 +464,56 @@ pub fn delete_owned_tree(root: &Path, target: &Path) -> Result<()> {
         fs::remove_file(target).map_err(|_| CoreError::new("Cannot delete private file"))?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+#[test]
+fn mismatched_zip64_locator_is_checked_with_fixed_reads_only() {
+    struct FooterOnly {
+        position: u64,
+        locator: u64,
+        record: [u8; 56],
+        trailer: [u8; 42],
+    }
+    impl Seek for FooterOnly {
+        fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
+            let SeekFrom::Start(position) = from else {
+                panic!("footer validation must use absolute offsets");
+            };
+            self.position = position;
+            Ok(position)
+        }
+    }
+    impl Read for FooterOnly {
+        fn read(&mut self, out: &mut [u8]) -> io::Result<usize> {
+            let bytes: &[u8] = match self.position {
+                0 => &self.record,
+                p if p == self.locator => &self.trailer[..20],
+                p if p == self.locator + 20 => &self.trailer[20..],
+                _ => panic!("attempted to read the ZIP64 extensible data sector"),
+            };
+            assert_eq!(out.len(), bytes.len(), "only fixed-size footer reads");
+            out.copy_from_slice(bytes);
+            self.position += out.len() as u64;
+            Ok(out.len())
+        }
+    }
+    let extension = 256 * 1024 * 1024;
+    let mut spool = FooterOnly {
+        position: 0,
+        locator: 56 + extension + 1,
+        record: [0; 56],
+        trailer: [0; 42],
+    };
+    spool.record[..4].copy_from_slice(b"PK\x06\x06");
+    spool.record[4..12].copy_from_slice(&(44u64 + extension).to_le_bytes());
+    spool.record[24..32].copy_from_slice(&((MAX_ENTRIES + 1) as u64).to_le_bytes());
+    spool.record[32..40].copy_from_slice(&((MAX_ENTRIES + 1) as u64).to_le_bytes());
+    spool.trailer[..4].copy_from_slice(b"PK\x06\x07");
+    spool.trailer[16..20].copy_from_slice(&1u32.to_le_bytes());
+    spool.trailer[20..24].copy_from_slice(b"PK\x05\x06");
+    spool.trailer[28..40].fill(0xff);
+    let position = spool.locator + 20;
+    let length = position + 22;
+    assert_eq!(central_directory_at(&mut spool, position, length), None);
 }

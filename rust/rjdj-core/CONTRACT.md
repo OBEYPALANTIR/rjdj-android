@@ -90,7 +90,7 @@ final class RjdjCore {
   static native void sendTouch(int kind, int pointerId1Based, float x, float y); // kind: 0 down, 1 xy, 2 up
   static native void sendAccelerate(float x, float y, float z);
   static native void sendMicVolume(float gain);
-  static native boolean sendRecord(String wavPath, boolean start);  // false = delivery failed; retain recording ownership on failed stop; start: "#transport scene <path>" then "#transport record 1"; stop: "#transport record 0"
+  static native boolean sendRecord(String wavPath, boolean start);  // false = delivery failed; retain recording ownership on failed stop; start atomically accepts "#transport scene <path>" then "#transport record 1"; stop: "#transport record 0"
   static native long[] audioInfo();   // [streamRate, pdRate(22050), framesPerBurst, outputXruns, inputXruns, outputLatencyMicros, state]
   static native void setListener(Listener l);   // one listener; replaced atomically
   interface Listener {
@@ -117,6 +117,8 @@ Pd->host lists on `rj_image_android` / `rj_text_android`. Pd runs at 22050 Hz, 1
 - `Command` is a fixed-size enum (paths in `arrayvec::ArrayString<1024>`); producer = any Java thread
   through a `Mutex<rtrb::Producer>` (UI side may lock); consumer = audio callback only.
   Queue capacity 256; a full queue drops the command and bumps a counter (surfaced in `audioInfo`).
+  RecordStart carries scene/open plus record 1 in one slot; rejection delivers neither message.
+  Java retries a rejected recording stop after synchronous audio stop, before releasing the retained patch/database.
 - Pd->host: `libpd_queued_init` + queued hooks; one permanently JVM-attached drain thread calls
   `libpd_queued_receive_pd_messages` every 10 ms while running and delivers `Listener` callbacks.
   Print hook concatenates until `\n`.

@@ -289,8 +289,7 @@ fn commands_stay_queued_until_audio_drain_and_preserve_payloads() {
             y: 0.0,
         },
         Command::Accelerate(1.0, -2.0, -3.0),
-        Command::RecordScene(ArrayString::from("/private/recordings/音 scene.wav").unwrap()),
-        Command::Record(true),
+        Command::RecordStart(ArrayString::from("/private/recordings/音 scene.wav").unwrap()),
         Command::Record(false),
     ] {
         assert!(queue.push(command));
@@ -357,6 +356,26 @@ fn command_queue_drops_new_commands_at_256_without_overwriting() {
 }
 
 #[test]
+fn record_start_uses_the_last_queue_slot_or_is_rejected_whole() {
+    let (queue, mut consumer) = CommandQueue::new();
+    for _ in 0..255 {
+        assert!(queue.push(Command::MicVolume(1.0)));
+    }
+    let start = Command::RecordStart(ArrayString::from("/private/record.wav").unwrap());
+    assert!(queue.push(start.clone()));
+    assert!(!queue.push(start));
+    assert_eq!(queue.dropped(), 1);
+    for _ in 0..255 {
+        assert!(matches!(consumer.pop(), Ok(Command::MicVolume(1.0))));
+    }
+    assert!(matches!(
+        consumer.pop(),
+        Ok(Command::RecordStart(path)) if path.as_str() == "/private/record.wav"
+    ));
+    assert!(consumer.pop().is_err());
+}
+
+#[test]
 fn patch_open_failure_names_the_main_patch_and_directory() {
     let mut session = Session::new(22050, false, &[]);
     session.open("#N canvas 0 0 400 300 10;\n");
@@ -385,14 +404,15 @@ fn processing_rejects_wrong_buffer_sizes_before_entering_c() {
 }
 
 #[test]
-fn command_queue_rejects_nul_paths_without_a_full_queue_drop() {
+fn command_queue_rejects_empty_and_nul_paths_without_a_full_queue_drop() {
     let (queue, mut consumer) = CommandQueue::new();
-    assert!(!queue.push(Command::RecordScene(
+    assert!(!queue.push(Command::RecordStart(ArrayString::new())));
+    assert!(!queue.push(Command::RecordStart(
         ArrayString::from("/private/record\0.wav").unwrap()
     )));
     assert!(consumer.pop().is_err());
     assert_eq!(queue.dropped(), 0);
-    assert!(queue.push(Command::RecordScene(
+    assert!(queue.push(Command::RecordStart(
         ArrayString::from("/private/record.wav").unwrap()
     )));
 }

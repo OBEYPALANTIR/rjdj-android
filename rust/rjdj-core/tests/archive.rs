@@ -241,88 +241,191 @@ fn java_max_entries_plus_one_is_rejected_and_staging_cleaned() {
     );
 }
 #[test]
-fn classic_declared_entry_count_is_rejected_before_zip_metadata_parsing() {
+fn classic_declared_entry_count_is_rejected_before_central_records_are_read() {
     for field in [8, 10] {
-        let mut bytes = [0; 22];
-        bytes[..4].copy_from_slice(b"PK\x05\x06");
-        bytes[field..field + 2].copy_from_slice(&((MAX_ENTRIES + 1) as u16).to_le_bytes());
-        // No central directory: ZipArchive::new cannot parse this footer-only archive.
-        assert!(zip::ZipArchive::new(Cursor::new(bytes)).is_err());
+        let mut bytes = [0; 26];
+        bytes[..4].copy_from_slice(b"PK\x01\x02");
+        let footer = &mut bytes[4..];
+        footer[..4].copy_from_slice(b"PK\x05\x06");
+        footer[field..field + 2]
+            .copy_from_slice(&((MAX_ENTRIES + 1) as u16).to_le_bytes());
+        // Only the first central signature exists; no entry can be parsed.
         rejected(&bytes, "Archive contains too many entries");
     }
 }
 #[test]
-fn zip64_declared_entry_count_is_rejected_before_zip_metadata_parsing() {
+fn zip64_declared_entry_count_is_rejected_before_central_records_are_read() {
     for classic_count in [0, u16::MAX] {
-        let mut bytes = [0; 98];
-        bytes[..4].copy_from_slice(b"PK\x06\x06");
-        bytes[4..12].copy_from_slice(&44u64.to_le_bytes());
-        bytes[32..40].copy_from_slice(&((MAX_ENTRIES + 1) as u64).to_le_bytes());
-        bytes[56..60].copy_from_slice(b"PK\x06\x07");
-        bytes[72..76].copy_from_slice(&1u32.to_le_bytes());
-        bytes[76..80].copy_from_slice(b"PK\x05\x06");
-        bytes[84..86].copy_from_slice(&classic_count.to_le_bytes());
-        bytes[86..88].copy_from_slice(&classic_count.to_le_bytes());
-        bytes[88..92].copy_from_slice(&u32::MAX.to_le_bytes());
-        // ZIP64's declared entries have no central records, so zip would reject this.
-        assert!(zip::ZipArchive::new(Cursor::new(bytes)).is_err());
-        rejected(&bytes, "Archive contains too many entries");
-    }
-}
-#[test]
-fn earlier_over_limit_footer_cannot_hide_behind_trailing_junk_or_a_later_footer() {
-    for magic in [b"PK\x05\x06", b"PK\x06\x06"] {
-        let mut bytes = vec![0; 8190];
-        let position = bytes.len();
-        bytes.extend_from_slice(magic);
-        if magic == b"PK\x05\x06" {
-            bytes.resize(position + 22, 0);
-            bytes[position + 10..position + 12]
-                .copy_from_slice(&((MAX_ENTRIES + 1) as u16).to_le_bytes());
-        } else {
-            bytes.resize(position + 76, 0);
-            bytes[position + 4..position + 12].copy_from_slice(&44u64.to_le_bytes());
-            bytes[position + 32..position + 40]
+        for field in [24, 32] {
+            let record_position = 46 * (MAX_ENTRIES + 1);
+            let mut bytes = vec![0; record_position + 98];
+            bytes[..4].copy_from_slice(b"PK\x01\x02");
+            let record = &mut bytes[record_position..record_position + 56];
+            record[..4].copy_from_slice(b"PK\x06\x06");
+            record[4..12].copy_from_slice(&44u64.to_le_bytes());
+            record[field..field + 8]
                 .copy_from_slice(&((MAX_ENTRIES + 1) as u64).to_le_bytes());
-            bytes[position + 56..position + 60].copy_from_slice(b"PK\x06\x07");
+            let locator = &mut bytes[record_position + 56..record_position + 76];
+            locator[..4].copy_from_slice(b"PK\x06\x07");
+            locator[8..16].copy_from_slice(&(record_position as u64).to_le_bytes());
+            locator[16..20].copy_from_slice(&1u32.to_le_bytes());
+            let footer = &mut bytes[record_position + 76..];
+            footer[..4].copy_from_slice(b"PK\x05\x06");
+            footer[8..10].copy_from_slice(&classic_count.to_le_bytes());
+            footer[10..12].copy_from_slice(&classic_count.to_le_bytes());
+            footer[12..20].fill(0xff);
+            // The count fits the ZIP64 directory span, but no complete entry exists.
+            rejected(&bytes, "Archive contains too many entries");
         }
-        bytes.resize(bytes.len() + 65536, 0);
-        let mut later = [0; 22];
-        later[..4].copy_from_slice(b"PK\x05\x06");
-        bytes.extend_from_slice(&later);
-        rejected(&bytes, "Archive contains too many entries");
     }
 }
 #[test]
-fn small_zip64_scene_with_classic_sentinels_is_accepted() {
-    for (prefix, extension) in [(0, 0), (100, 256), (8190, 65536)] {
+fn stored_nested_zip_over_outer_entry_limit_is_an_opaque_scene_asset() {
+    let work = Work::new();
+    let stored = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
+    let mut nested = ZipWriter::new(Cursor::new(Vec::new()));
+    for i in 0..=MAX_ENTRIES {
+        nested.start_file(format!("{i:08}"), stored).unwrap();
+    }
+    let nested = nested.finish().unwrap().into_inner();
+    let mut outer = ZipWriter::new(Cursor::new(Vec::new()));
+    outer.start_file("Test.rj/_main.pd", options()).unwrap();
+    outer.write_all(b"patch").unwrap();
+    outer.start_file("Test.rj/Info.plist", options()).unwrap();
+    outer.write_all(INFO.as_bytes()).unwrap();
+    outer.start_file("Test.rj/assets.zip", stored).unwrap();
+    outer.write_all(&nested).unwrap();
+    let bytes = outer.finish().unwrap().into_inner();
+    let imported = import_scene(bytes.as_slice(), &work.root()).unwrap();
+    assert_eq!(imported, work.root().join("Test.rj"));
+    assert_eq!(fs::read(imported.join("assets.zip")).unwrap(), nested);
+}
+#[test]
+fn zip64_mismatched_large_extensible_sector_is_rejected_before_entry_count() {
+    let work = Work::new();
+    let root = work.root();
+    let kept = scene(&root, "Kept.rj", INFO);
+    let extension = 256 * 1024 * 1024;
+    let mut record = [0; 56];
+    record[..4].copy_from_slice(b"PK\x06\x06");
+    record[4..12].copy_from_slice(&(44u64 + extension).to_le_bytes());
+    record[24..32].copy_from_slice(&((MAX_ENTRIES + 1) as u64).to_le_bytes());
+    record[32..40].copy_from_slice(&((MAX_ENTRIES + 1) as u64).to_le_bytes());
+    let mut trailer = [0; 42];
+    trailer[..4].copy_from_slice(b"PK\x06\x07");
+    trailer[16..20].copy_from_slice(&1u32.to_le_bytes());
+    trailer[20..24].copy_from_slice(b"PK\x05\x06");
+    trailer[28..40].fill(0xff);
+    // Stream the large gap without allocating it; the locator is one byte past the record end.
+    let input = Cursor::new(record)
+        .chain(io::repeat(0).take(extension + 1))
+        .chain(Cursor::new(trailer));
+    assert_eq!(import_scene(input, &root).unwrap_err().message, ONE_SCENE);
+    assert_eq!(names(&root), vec!["Kept.rj"]);
+    assert_eq!(fs::read(kept.join("_main.pd")).unwrap(), b"patch");
+}
+#[test]
+fn backward_footer_search_retries_invalid_candidates_across_buffer_boundaries() {
+    for boundary in 1..=3 {
         let work = Work::new();
         let mut bytes = valid();
-        let mut classic = bytes.split_off(bytes.len() - 22);
-        let record_position = bytes.len() as u64;
-        let mut record = [0; 56];
-        record[..4].copy_from_slice(b"PK\x06\x06");
-        record[4..12].copy_from_slice(&(44u64 + extension).to_le_bytes());
-        record[12..14].copy_from_slice(&45u16.to_le_bytes());
-        record[14..16].copy_from_slice(&45u16.to_le_bytes());
-        record[24..32].copy_from_slice(&2u64.to_le_bytes());
-        record[32..40].copy_from_slice(&2u64.to_le_bytes());
-        record[40..44].copy_from_slice(&classic[12..16]);
-        record[48..52].copy_from_slice(&classic[16..20]);
-        bytes.extend_from_slice(&record);
-        bytes.resize(bytes.len() + extension as usize, 0);
-        let mut locator = [0; 20];
-        locator[..4].copy_from_slice(b"PK\x06\x07");
-        locator[8..16].copy_from_slice(&record_position.to_le_bytes());
-        locator[16..20].copy_from_slice(&1u32.to_le_bytes());
-        bytes.extend_from_slice(&locator);
-        classic[8..20].fill(0xff);
-        bytes.extend_from_slice(&classic);
-        bytes.splice(..0, vec![0; prefix]);
+        bytes.resize(bytes.len() + 8192 - 44 + boundary, 0);
+        let mut later = [0; 22];
+        later[..4].copy_from_slice(b"PK\x05\x06");
+        later[10..12].copy_from_slice(&((MAX_ENTRIES + 1) as u16).to_le_bytes());
+        match boundary {
+            1 => later[16..20].copy_from_slice(&u32::MAX.to_le_bytes()),
+            2 => later[20..22].copy_from_slice(&u16::MAX.to_le_bytes()),
+            _ => later[4..6].copy_from_slice(&1u16.to_le_bytes()),
+        }
+        bytes.extend_from_slice(&later);
         assert_eq!(
             import_scene(bytes.as_slice(), &work.root()).unwrap(),
             work.root().join("Test.rj")
         );
+    }
+}
+#[test]
+fn small_zip64_scene_with_classic_sentinels_and_entry_extras_is_accepted() {
+    for extension in [0, 256, 65536] {
+        for fields in [&[24, 20, 42][..], &[20][..], &[42][..], &[24][..]] {
+            let work = Work::new();
+            let original = valid();
+            let mut classic = original[original.len() - 22..].to_vec();
+            let start = u32::from_le_bytes(classic[16..20].try_into().unwrap()) as usize;
+            let mut bytes = original[..start].to_vec();
+            let mut position = start;
+            for _ in 0..2 {
+                let mut header = original[position..position + 46].to_vec();
+                let name = u16::from_le_bytes(header[28..30].try_into().unwrap()) as usize;
+                let extra = u16::from_le_bytes(header[30..32].try_into().unwrap()) as usize;
+                let comment = u16::from_le_bytes(header[32..34].try_into().unwrap()) as usize;
+                let mut zip64 = Vec::new();
+                for &field in fields {
+                    let value = u32::from_le_bytes(header[field..field + 4].try_into().unwrap());
+                    zip64.extend_from_slice(&u64::from(value).to_le_bytes());
+                    header[field..field + 4].fill(0xff);
+                }
+                header[6..8].copy_from_slice(&45u16.to_le_bytes());
+                header[30..32].copy_from_slice(&((extra + 10 + zip64.len()) as u16).to_le_bytes());
+                bytes.extend_from_slice(&header);
+                bytes.extend_from_slice(&original[position + 46..position + 46 + name + extra]);
+                bytes.extend_from_slice(&[0xfe, 0xca, 2, 0, 0, 0]);
+                bytes.extend_from_slice(&1u16.to_le_bytes());
+                bytes.extend_from_slice(&(zip64.len() as u16).to_le_bytes());
+                bytes.extend_from_slice(&zip64);
+                bytes.extend_from_slice(
+                    &original[position + 46 + name + extra..position + 46 + name + extra + comment],
+                );
+                position += 46 + name + extra + comment;
+            }
+            let record_position = bytes.len() as u64;
+            let mut record = [0; 56];
+            record[..4].copy_from_slice(b"PK\x06\x06");
+            record[4..12].copy_from_slice(&(44u64 + extension).to_le_bytes());
+            record[12..14].copy_from_slice(&45u16.to_le_bytes());
+            record[14..16].copy_from_slice(&45u16.to_le_bytes());
+            record[24..32].copy_from_slice(&2u64.to_le_bytes());
+            record[32..40].copy_from_slice(&2u64.to_le_bytes());
+            record[40..48].copy_from_slice(&(record_position - start as u64).to_le_bytes());
+            record[48..56].copy_from_slice(&(start as u64).to_le_bytes());
+            bytes.extend_from_slice(&record);
+            bytes.resize(bytes.len() + extension as usize, 0);
+            let mut locator = [0; 20];
+            locator[..4].copy_from_slice(b"PK\x06\x07");
+            locator[8..16].copy_from_slice(&record_position.to_le_bytes());
+            locator[16..20].copy_from_slice(&1u32.to_le_bytes());
+            bytes.extend_from_slice(&locator);
+            classic[8..20].fill(0xff);
+            bytes.extend_from_slice(&classic);
+            let imported = import_scene(bytes.as_slice(), &work.root()).unwrap();
+            assert_eq!(imported, work.root().join("Test.rj"));
+            assert_eq!(fs::read(imported.join("_main.pd")).unwrap(), b"patch");
+        }
+    }
+}
+#[test]
+fn central_zip64_sentinels_require_complete_extra_fields() {
+    for extra in [
+        &[][..],
+        &[1, 0, 0, 0][..],
+        &[1, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0][..],
+        &[1, 0, 8, 0][..],
+    ] {
+        let mut bytes = valid();
+        let footer = bytes.len() - 22;
+        let start = u32::from_le_bytes(bytes[footer + 16..footer + 20].try_into().unwrap()) as usize;
+        let size = u32::from_le_bytes(bytes[footer + 12..footer + 16].try_into().unwrap());
+        let name = u16::from_le_bytes(bytes[start + 28..start + 30].try_into().unwrap()) as usize;
+        let previous = u16::from_le_bytes(bytes[start + 30..start + 32].try_into().unwrap());
+        bytes[start + 20..start + 24].fill(0xff);
+        bytes[start + 30..start + 32]
+            .copy_from_slice(&(previous + extra.len() as u16).to_le_bytes());
+        let insertion = start + 46 + name;
+        bytes.splice(insertion..insertion, extra.iter().copied());
+        let footer = footer + extra.len();
+        bytes[footer + 12..footer + 16].copy_from_slice(&(size + extra.len() as u32).to_le_bytes());
+        rejected(&bytes, ONE_SCENE);
     }
 }
 #[test]
@@ -375,7 +478,7 @@ fn java_duplicate_canonical_paths_are_rejected() {
     );
 }
 #[test]
-fn java_duplicate_identical_zip_names_are_not_hidden_by_ziparchive() {
+fn java_duplicate_identical_central_names_are_rejected() {
     let mut bytes = archive(&[("A.rj/one", b"first"), ("A.rj/two", b"second")]);
     for i in 0..bytes.len() - 8 {
         if &bytes[i..i + 8] == b"A.rj/two" {

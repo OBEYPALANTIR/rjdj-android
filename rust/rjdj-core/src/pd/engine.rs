@@ -167,7 +167,7 @@ pub enum TouchKind {
     Up = 2,
 }
 
-// RecordScene carries a fixed 1 KiB path so the queue stays allocation-free (CONTRACT.md).
+// RecordStart carries a fixed 1 KiB path so the queue stays allocation-free (CONTRACT.md).
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone)]
 pub enum Command {
@@ -180,7 +180,7 @@ pub enum Command {
         y: f32,
     },
     Accelerate(f32, f32, f32),
-    RecordScene(ArrayString<1024>),
+    RecordStart(ArrayString<1024>),
     Record(bool),
 }
 
@@ -197,7 +197,7 @@ fn float_message(receiver: &CStr, selector: &CStr, values: &[f32]) {
 
 impl Command {
     /// Internal Pd dispatch; only drain_into_pd may call this while the audio callback owns libpd.
-    /// Fixed selectors were interned at init. RecordScene still invokes libpd's allocating gensym
+    /// Fixed selectors were interned at init. RecordStart still invokes libpd's allocating gensym
     /// for a previously unseen path (and the scene's writesf~ may itself perform recording I/O).
     pub fn apply(&self) {
         match self {
@@ -228,11 +228,11 @@ impl Command {
                     ffi::libpd_finish_list(c"#accelerate".as_ptr());
                 }
             }
-            Self::RecordScene(path) => {
+            Self::RecordStart(path) => {
                 // Queue producers validate this before the callback; never silently truncate a path.
                 assert!(
-                    !path.as_bytes().contains(&0),
-                    "RecordScene path contains NUL"
+                    !path.is_empty() && !path.as_bytes().contains(&0),
+                    "Invalid RecordStart path"
                 );
                 let mut terminated = [0u8; 1025];
                 terminated[..path.len()].copy_from_slice(path.as_bytes());
@@ -242,6 +242,7 @@ impl Command {
                     ffi::libpd_add_symbol(terminated.as_ptr().cast());
                     ffi::libpd_finish_message(c"#transport".as_ptr(), c"scene".as_ptr());
                 }
+                float_message(c"#transport", c"record", &[1.0]);
             }
             Self::Record(on) => {
                 float_message(c"#transport", c"record", &[if *on { 1.0 } else { 0.0 }]);
@@ -268,10 +269,11 @@ impl CommandQueue {
         )
     }
 
-    /// UI/control thread only. False means full, or a NUL-bearing RecordScene path.
+    /// UI/control thread only. False means full, or an empty/NUL-bearing RecordStart path.
     /// Only full-queue drops increment the overflow counter.
     pub fn push(&self, command: Command) -> bool {
-        if matches!(&command, Command::RecordScene(path) if path.as_bytes().contains(&0)) {
+        if matches!(&command, Command::RecordStart(path) if path.is_empty() || path.as_bytes().contains(&0))
+        {
             return false;
         }
         let mut producer = self
@@ -292,7 +294,7 @@ impl CommandQueue {
 }
 
 /// The only host-command entry into Pd: the audio consumer drains FIFO order without Rust locks,
-/// heap allocation, sleeping, logging or JNI. RecordScene's native gensym is the documented exception.
+/// heap allocation, sleeping, logging or JNI. RecordStart's native gensym is the documented exception.
 pub fn drain_into_pd(consumer: &mut Consumer<Command>) {
     while let Ok(command) = consumer.pop() {
         command.apply();

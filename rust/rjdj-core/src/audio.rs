@@ -19,7 +19,7 @@
 //!
 //! The data callback owns a preallocated scratch buffer, FIFO and SPSC consumer.
 //! It only does nonblocking input reads, atomic bookkeeping and Pd ticks: no
-//! Rust allocation, mutex, sleep, logging, I/O or JNI. Pd's RecordScene gensym
+//! Rust allocation, mutex, sleep, logging, I/O or JNI. Pd's RecordStart gensym
 //! and writesf~ are the accepted native allocation/recording-I/O exceptions.
 //! Record(false) waits at most 250 ms on the control side for a completed Pd
 //! command drain while streams exist, or applies synchronously to a paused patch.
@@ -472,7 +472,7 @@ fn valid_command(command: &Command) -> bool {
         Command::MicVolume(gain) => gain.is_finite() && *gain >= 0.0,
         Command::Touch { id, x, y, .. } => *id > 0 && x.is_finite() && y.is_finite(),
         Command::Accelerate(x, y, z) => x.is_finite() && y.is_finite() && z.is_finite(),
-        Command::RecordScene(path) => !path.is_empty() && !path.as_bytes().contains(&0),
+        Command::RecordStart(path) => !path.is_empty() && !path.as_bytes().contains(&0),
         Command::TransportPlay(_) | Command::Record(_) => true,
     }
 }
@@ -1387,9 +1387,23 @@ mod tests {
     }
 
     #[test]
-    fn saturated_session_rejects_record_stop_before_waiting_for_drain() {
+    fn saturated_session_record_stop_retries_directly_after_shutdown() {
         let _operation = OPERATION.lock().unwrap_or_else(|error| error.into_inner());
-        let (queue, _consumer) = CommandQueue::new();
+        let directory = std::env::temp_dir().join(format!("rjdj-record-stop-{}", std::process::id()));
+        std::fs::create_dir(&directory).unwrap();
+        std::fs::write(directory.join("_main.pd"), "#N canvas 0 0 100 100 10;\n").unwrap();
+        let patch = {
+            let mut engine = Engine::global()
+                .lock()
+                .unwrap_or_else(|error| error.into_inner());
+            engine.init().unwrap();
+            engine.open_patch(&directory, "_main.pd").unwrap()
+        };
+        let previous_patch = PATCH
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .replace((directory.clone(), patch));
+        let (queue, mut consumer) = CommandQueue::new();
         for _ in 0..256 {
             assert!(queue.push(Command::MicVolume(1.0)));
         }
@@ -1400,11 +1414,22 @@ mod tests {
         let previous = CURRENT
             .lock()
             .unwrap_or_else(|error| error.into_inner())
-            .replace((shared, Arc::clone(&queue)));
+            .replace((Arc::clone(&shared), Arc::clone(&queue)));
         let delivered = send(Command::Record(false));
-        *CURRENT.lock().unwrap_or_else(|error| error.into_inner()) = previous;
         assert!(!delivered);
         assert_eq!(queue.dropped(), 1);
+        flush_stopped(&shared, &mut consumer);
+        assert!(consumer.pop().is_err());
+        assert!(SESSION
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .is_none());
+        shutdown_session();
+        assert!(send(Command::Record(false)));
+        close_retained_patch(&directory);
+        *PATCH.lock().unwrap_or_else(|error| error.into_inner()) = previous_patch;
+        *CURRENT.lock().unwrap_or_else(|error| error.into_inner()) = previous;
+        std::fs::remove_dir_all(directory).unwrap();
     }
 
     #[test]
@@ -1527,6 +1552,15 @@ mod tests {
             x: 0.0,
             y: 0.0,
         }));
+        assert!(!valid_command(&Command::RecordStart(
+            arrayvec::ArrayString::new()
+        )));
+        assert!(!valid_command(&Command::RecordStart(
+            arrayvec::ArrayString::from("/private/record\0.wav").unwrap()
+        )));
+        assert!(valid_command(&Command::RecordStart(
+            arrayvec::ArrayString::from("/private/record.wav").unwrap()
+        )));
         assert!(valid_command(&Command::Record(false)));
     }
 }

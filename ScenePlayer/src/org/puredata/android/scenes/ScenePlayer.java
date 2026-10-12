@@ -489,7 +489,14 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 		recStart = System.currentTimeMillis();
 		String fileName = "recording_" + recStart + ".wav";
 		recFile = new File(recDir, fileName).getAbsolutePath();
-		RjdjCore.sendRecord(recFile, true);
+		if (!RjdjCore.sendRecord(recFile, true)) {
+			recFile = null;
+			record.setChecked(false);
+			String message = "Unable to start recording: " + statusName(RjdjCore.INTERNAL);
+			Log.e(TAG, message);
+			toast(message);
+			return;
+		}
 		post("Recording...");
 	}
 
@@ -597,6 +604,7 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
         RjdjCore.sendTransportPlay(false);
         if (audioService != null) audioService.stopAudio();
         else RjdjCore.stopAudio();
+        if (recFile != null) stopRecording();
         ((SensorManager) getSystemService(SENSOR_SERVICE)).unregisterListener(this);
         if (audioService != null) audioService.abandonAudioFocus();
         if (play != null) play.setChecked(false);
