@@ -1,0 +1,128 @@
+{
+  "name": "c_urn",
+  "args": [
+    10
+  ],
+  "source": "rj/c_urn-help.pd:139-156 + rj/c_urn.pd:8-15,31-38",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        10
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        "seed",
+        10
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        "clear"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 50,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 60,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 70,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 80,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 90,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 110,
+      "message": [
+        "bang"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 10,
+      "type": "float",
+      "range": [
+        0,
+        9
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 1,
+      "type": "bang"
+    }
+  ],
+  "notes": "Ten draws from the urn produce integers 0..9, then the eleventh draw bangs the empty outlet. Physical outlet order is values x=218 then empty x=359. Schema tests draw count, range, and exhaustion; it cannot assert pairwise distinct random values."
+}

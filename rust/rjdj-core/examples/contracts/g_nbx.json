@@ -1,0 +1,44 @@
+{
+  "name": "g_nbx",
+  "args": [
+    "A"
+  ],
+  "source": "rj/g_nbx-help.pd:20-27 + rj/g_nbx.pd:2-12,29-36",
+  "duration_ms": 250,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "A",
+        12
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "unused",
+        7
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "exact": [
+        [
+          "A",
+          12
+        ],
+        [
+          "unused",
+          7
+        ]
+      ]
+    }
+  ],
+  "notes": "Tagged input updates the GUI using set (no duplicate emission); the inlet is also wired directly to the outlet, preserving matching and unmatched messages. This checks exact control passthrough and tag/value routing, not visual appearance or user mouse interaction."
+}

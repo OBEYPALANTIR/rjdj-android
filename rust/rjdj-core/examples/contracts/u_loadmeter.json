@@ -1,0 +1,35 @@
+{
+  "name": "u_loadmeter",
+  "args": [],
+  "source": "rj/u_loadmeter-help.pd:5-9,19-22 + rj/u_loadmeter.pd:2-16",
+  "duration_ms": 2000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 1900,
+      "message": [
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "float",
+      "range": [
+        0,
+        200
+      ]
+    }
+  ],
+  "notes": "Enable the one-second cputime/metro load monitor, then disable before2seconds. The result is nonnegative percent (0.1*integer elapsed CPU ms), not audio RMS; bounded at200% allowing CPU scheduling variance. Exact host CPU utilization is intentionally not asserted."
+}

@@ -1,0 +1,76 @@
+{
+  "name": "s_osc",
+  "args": [
+    "NAME",
+    "saw"
+  ],
+  "source": "rj/s_osc-help.pd:65-67,82,99-107 + rj/s_osc.pd:217-234",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "dc",
+        "amp": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "switch",
+        1,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "phase",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 750,
+      "message": [
+        "switch",
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.69,
+        0.72
+      ],
+      "window_ms": [
+        100,
+        600
+      ],
+      "centroid_hz": [
+        420,
+        460
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "window_ms": [
+        900,
+        1000
+      ],
+      "silent": true
+    }
+  ],
+  "notes": "Audio-rate frequency inlet is held at 440 Hz. Switch selects only the unit-amplitude sine (RMS 1/sqrt(2)); switching all four oscillators off must silence the same outlet. Uses NAME saw creation arguments from the example."
+}

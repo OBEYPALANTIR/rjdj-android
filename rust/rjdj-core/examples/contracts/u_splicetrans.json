@@ -1,0 +1,39 @@
+{
+  "name": "u_splicetrans",
+  "args": [
+    0
+  ],
+  "source": "rj/u_splicetrans-help.pd:22-30 + rj/u_splicetrans.pd:2-10,24-37,117-134",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "dc",
+        "amp": 0.5
+      }
+    },
+    {
+      "inlet": 1,
+      "signal": {
+        "kind": "dc",
+        "amp": 440
+      }
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.48,
+        0.52
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    }
+  ],
+  "notes": "Phase transition splicer uses first and third harmonics (arg0) and requires phase in[0,1] plus its frequency. The supported dc stimulus holds the central phase0.5: subtract0.5 selects the centered transition-table zero, so output remains near0.5 after table construction. This checks both signal ports and a source-derived fixed point; spectral alias rejection of a moving phasor is not claimed because the agreed stimulus kinds lack phasor."
+}

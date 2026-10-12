@@ -1,0 +1,53 @@
+{
+  "name": "m_ratio2intv",
+  "args": [],
+  "source": "rj/m_ratio2intv-help.pd:5-12 + rj/m_ratio2intv.pd:2-25",
+  "duration_ms": 250,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        2
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 60,
+      "message": [
+        0.5
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 3,
+      "type": "float",
+      "exact": [
+        [
+          0
+        ],
+        [
+          12
+        ],
+        [
+          -12
+        ]
+      ],
+      "range": [
+        -12.001,
+        12.001
+      ]
+    }
+  ],
+  "notes": "Semitone interval=12*log(ratio)/log2:unison0,octaveup12,octavedown-12. Positive ratios keep the logarithm within its defined domain."
+}

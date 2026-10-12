@@ -1,0 +1,79 @@
+{
+  "name": "m_majorscale",
+  "args": [
+    60
+  ],
+  "source": "rj/m_majorscale-help.pd:6-18 + rj/m_majorscale.pd:2-18,35-47",
+  "duration_ms": 350,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 20,
+      "message": [
+        60
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 60,
+      "message": [
+        2
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 80,
+      "message": [
+        7
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 100,
+      "message": [
+        48
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 120,
+      "message": [
+        4
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 4,
+      "type": "float",
+      "exact": [
+        [
+          60
+        ],
+        [
+          64
+        ],
+        [
+          72
+        ],
+        [
+          55
+        ]
+      ],
+      "range": [
+        48,
+        72
+      ]
+    }
+  ],
+  "notes": "Zero-based major degrees0,2,7 attonic60 give60,64,72. Changing thetonic to48 makes degree4 equal55; octave continuation and tonic inlet are checked."
+}

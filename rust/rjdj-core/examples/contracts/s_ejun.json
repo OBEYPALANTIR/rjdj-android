@@ -1,0 +1,359 @@
+{
+  "name": "s_ejun",
+  "args": [
+    "COR-R2-ejun"
+  ],
+  "source": "r/s_ejun-help.pd:74-83,254-277 + r/s_ejun.pd:90-126,308-375,401-404",
+  "duration_ms": 1800,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1a",
+        0.133858
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1d",
+        0.23622
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1s",
+        0.472441
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1r",
+        0.0356693
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2a",
+        0.173228
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2d",
+        0.278189
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2s",
+        0.692913
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2r",
+        0.322835
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3a",
+        0.307087
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3d",
+        0.606299
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3s",
+        0.0314961
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3r",
+        0.110236
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1a",
+        0.913386
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1b",
+        0.80315
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1c",
+        0.181102
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1d",
+        0.574803
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2a",
+        0.747717
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2b",
+        0.0866142
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2c",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2d",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3a",
+        0.238189
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3b",
+        0.015748
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3c",
+        0.00787402
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3d",
+        0.023622
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1a",
+        0.496063
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1b",
+        0.322835
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1c",
+        0.102362
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1d",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2a",
+        0.0393701
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2b",
+        0.0314961
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2c",
+        0.015748
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2d",
+        0.740157
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3a",
+        0.015748
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3b",
+        0.401575
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3c",
+        0.015748
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3d",
+        0.00787402
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        60,
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 300,
+      "message": [
+        "save"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 1100,
+      "message": [
+        60,
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.005,
+        0.8
+      ],
+      "window_ms": [
+        500,
+        900
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        1600,
+        1800
+      ],
+      "silent": true
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 36,
+      "type": "list",
+      "range": [
+        0,
+        1
+      ]
+    }
+  ],
+  "notes": "Uses all 36 values of the help orchy preset. MIDI note 60/velocity 100 drives detuned saw/PWM oscillators through three vcf stages and the amplitude envelope, with final gain 3*mod3b=1.204725. The post-attack body must be audible without an unbounded response. env1 release is 249.6851 ms; note-off at 1100 ms should leave the 1600 ms onward output silent. save returns 36 parameter/value lists in the documented 0..1 range. Oscillators require no wav fixture."
+}

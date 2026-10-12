@@ -1,0 +1,92 @@
+{
+  "name": "m_autoscale",
+  "args": [
+    0,
+    1,
+    1
+  ],
+  "source": "rj/m_autoscale-help.pd:13-18,20-38 + rj/m_autoscale.pd:154-172,189-213",
+  "duration_ms": 500,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 20,
+      "message": [
+        "input",
+        0,
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 40,
+      "message": [
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 60,
+      "message": [
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 80,
+      "message": [
+        50
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 120,
+      "message": [
+        "dump"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 3,
+      "type": "float",
+      "exact": [
+        [
+          0
+        ],
+        [
+          0.5
+        ],
+        [
+          1
+        ]
+      ],
+      "range": [
+        0,
+        1
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 1,
+      "type": "list",
+      "exact": [
+        [
+          0,
+          100
+        ]
+      ]
+    }
+  ],
+  "notes": "Seed input bounds0..100, disable dynamic adaptation, then linear map0,50,100 to0,0.5,1. Dump reports the seeded current bounds; both inlets and both outlets are exercised."
+}

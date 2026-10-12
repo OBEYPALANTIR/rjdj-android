@@ -1,0 +1,48 @@
+{
+  "name": "r_#time",
+  "args": [],
+  "source": "r/r_#time-help.pd:18-30 + r/r_#time.pd:2-26",
+  "duration_ms": 150,
+  "stimuli": [
+    {
+      "receiver": "#time",
+      "at_ms": 20,
+      "message": [
+        2026,
+        10,
+        11,
+        0,
+        284,
+        0,
+        12,
+        34,
+        56,
+        789
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 1,
+      "type": "list",
+      "exact": [
+        [
+          2026,
+          10,
+          11,
+          0,
+          284,
+          0,
+          12,
+          34,
+          56,
+          789
+        ]
+      ]
+    }
+  ],
+  "notes": "No inlets. The fallback #time receiver preserves the ten fields documented by the help patch (year through milliseconds). Missing native object rj_time causes creation/connection errors; host-injected time is testable, native clock polling is not.",
+  "expected_result": "instantiates-with-errors"
+}

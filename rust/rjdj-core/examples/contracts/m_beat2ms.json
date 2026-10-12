@@ -1,0 +1,69 @@
+{
+  "name": "m_beat2ms",
+  "args": [
+    120
+  ],
+  "source": "rj/m_beat2ms-help.pd:22-29 + rj/m_beat2ms.pd:2-11,28-34",
+  "duration_ms": 300,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 20,
+      "message": [
+        120
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 60,
+      "message": [
+        2
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 80,
+      "message": [
+        60
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        1
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 3,
+      "type": "float",
+      "exact": [
+        [
+          500
+        ],
+        [
+          1000
+        ],
+        [
+          1000
+        ]
+      ],
+      "range": [
+        500,
+        1000
+      ]
+    }
+  ],
+  "notes": "Milliseconds=beats*60000/bpm:1 and2 beats at120BPM give500 and1000ms; changing tempo to60 makes1beat1000ms."
+}

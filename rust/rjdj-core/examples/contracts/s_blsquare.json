@@ -1,0 +1,44 @@
+{
+  "name": "s_blsquare",
+  "args": [],
+  "source": "r/s_blsquare-help.pd:21-30 + r/s_blsquare.pd:2-8,9-50,60-68",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "dc",
+        "amp": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "signal": {
+        "kind": "dc",
+        "amp": 0.5
+      }
+    },
+    {
+      "inlet": 2,
+      "at_ms": 20,
+      "message": [
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.42,
+        0.55
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    }
+  ],
+  "notes": "DC 440 Hz with 50% duty cycle and phase zero. Two opposite-polarity spliced saws sum to a centered approximately +/-0.5 square; bandlimiting reduces edge energy slightly, predicting RMS around 0.5. All three inlets are exercised. Oscillator, not a wav-backed sampler."
+}

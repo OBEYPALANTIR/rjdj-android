@@ -1,0 +1,54 @@
+{
+  "name": "g_showtext",
+  "args": [
+    "sometext",
+    200,
+    100
+  ],
+  "source": "rj/g_showtext-help.pd:34-46 + rj/g_showtext.pd:2-26,71-73,90-116",
+  "duration_ms": 250,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 30,
+      "message": [
+        "pos",
+        160,
+        160
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 50,
+      "message": [
+        "text",
+        "hello",
+        "world"
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 70,
+      "message": [
+        "size",
+        20
+      ]
+    }
+  ],
+  "expect": [],
+  "notes": "No outlets exist: show/hide, position, list-to-symbol text and size commands are exercised through the public inlets. rj_text host rendering and visual state are not observable as abstraction outlets in libpd."
+}

@@ -1,0 +1,176 @@
+{
+  "name": "u_channelstrip",
+  "args": [
+    "MYSTRIP"
+  ],
+  "source": "rj/u_channelstrip-help.pd:2-11,67-75 + rj/u_channelstrip.pd:3-46,52-70,96-98",
+  "duration_ms": 1800,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mute",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "level",
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "pan",
+        0.5
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "aux1",
+        0.5
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "aux2",
+        0.25
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "aux1name",
+        "rjqa_aux1"
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "aux2name",
+        "rjqa_aux2"
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 1000,
+      "message": [
+        "save"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.242,
+        0.255
+      ],
+      "window_ms": [
+        800,
+        1500
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.242,
+        0.255
+      ],
+      "window_ms": [
+        800,
+        1500
+      ]
+    },
+    {
+      "outlet": 2,
+      "kind": "signal",
+      "rms": [
+        0.17,
+        0.18
+      ],
+      "window_ms": [
+        800,
+        1500
+      ]
+    },
+    {
+      "outlet": 3,
+      "kind": "signal",
+      "rms": [
+        0.085,
+        0.09
+      ],
+      "window_ms": [
+        800,
+        1500
+      ]
+    },
+    {
+      "outlet": 4,
+      "kind": "control",
+      "min_messages": 7,
+      "type": "any",
+      "exact": [
+        [
+          "aux2name",
+          "rjqa_aux2"
+        ],
+        [
+          "aux1name",
+          "rjqa_aux1"
+        ],
+        [
+          "aux2",
+          0.25
+        ],
+        [
+          "aux1",
+          0.5
+        ],
+        [
+          "pan",
+          0.5
+        ],
+        [
+          "level",
+          100
+        ],
+        [
+          "mute",
+          0
+        ]
+      ]
+    }
+  ],
+  "notes": "Postfader mixing strip at100dB Pd unity, unmuted, equal-power center pan. For input sine amplitude0.5 the main RMS is0.25 per channel, aux1 RMS0.17678, aux2 RMS0.08839. Window begins after lop~1 gain smoothing settles. Real catch~ companions satisfy renamed auxiliary throws; save must reproduce all seven controls in the documented reverse-dispatch order.",
+  "fixtures": [
+    {
+      "object": "catch~ rjqa_aux1"
+    },
+    {
+      "object": "catch~ rjqa_aux2"
+    }
+  ]
+}

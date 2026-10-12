@@ -1,0 +1,50 @@
+{
+  "name": "e_bitcrusher",
+  "args": [
+    "bc1000",
+    4
+  ],
+  "source": "rj/e_bitcrusher-help.pd:15,21-34 + rj/e_bitcrusher.pd:5-48",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 220
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "depth",
+        4
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "dry",
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.31,
+        0.4
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    }
+  ],
+  "notes": "Four-step floor quantization of a 0.5 sine creates bounded distortion; the two 4 Hz highpasses remove the quantizer DC offset. Physical inlet 0 is the signal at x=72, inlet 1 is the method inlet at x=258."
+}

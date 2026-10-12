@@ -1,0 +1,57 @@
+{
+  "name": "e_beequad",
+  "args": [],
+  "source": "rj/e_beequad-help.pd:9-10,50-61 + rj/e_beequad.pd:385-400,419-432",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 2200
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "interp",
+        10
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        1.88478,
+        -0.904073,
+        0.00482327,
+        0.00964654,
+        0.00482327
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 100,
+      "message": [
+        "clear"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.007,
+        0.035
+      ],
+      "window_ms": [
+        300,
+        1000
+      ]
+    }
+  ],
+  "notes": "The help lowpass coefficients encode approximately 1000 Hz at 44.1 kHz, hence 500 Hz at the engine 22050 Hz. A 2200 Hz sine must be strongly attenuated rather than merely produce arbitrary audio; coefficient interpolation and state clear are exercised."
+}

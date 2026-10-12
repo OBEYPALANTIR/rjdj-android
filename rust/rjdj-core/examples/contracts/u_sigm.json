@@ -1,0 +1,81 @@
+{
+  "name": "u_sigm",
+  "args": [
+    "rjqa_function"
+  ],
+  "source": "rj/u_sigm-help.pd:6-13,24 + rj/u_sigm.pd:2-16",
+  "duration_ms": 100,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "gain",
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        -1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 40,
+      "message": [
+        "gain",
+        2
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 50,
+      "message": [
+        1
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 4,
+      "type": "float",
+      "exact": [
+        [
+          0.5
+        ],
+        [
+          0.7310585786300049
+        ],
+        [
+          0.2689414213699951
+        ],
+        [
+          0.8807970779778823
+        ]
+      ],
+      "range": [
+        0,
+        1
+      ]
+    }
+  ],
+  "notes": "Logistic sigmoid y=1/(1+exp(-gain*x)). Tests zero, positive, negative, and gain update with numerical values derived directly from the exp/add/divide source."
+}

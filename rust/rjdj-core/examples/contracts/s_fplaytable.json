@@ -1,0 +1,78 @@
+{
+  "name": "s_fplaytable",
+  "args": [
+    0
+  ],
+  "source": "r/s_fplaytable-help.pd:2-22 + r/s_fplaytable.pd:2-8,25-46",
+  "duration_ms": 1400,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "loop",
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "sine440_1s",
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.34,
+        0.37
+      ],
+      "window_ms": [
+        100,
+        900
+      ],
+      "centroid_hz": [
+        420,
+        460
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        1200,
+        1400
+      ],
+      "silent": true
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 1,
+      "type": "bang",
+      "exact": [
+        [
+          "bang"
+        ]
+      ]
+    }
+  ],
+  "notes": "The help player takes a TABLE symbol, not a filename, plus optional start offset in milliseconds; inlet 1 controls looping. Harness loads the generated one-second peak-0.5/440 Hz mono wav into sine440_1s. Offset 0 and loop 0 require direct unattenuated RMS 0.35355 playback, a completion bang at approximately 1020 ms, and subsequent silence. Both public inlets and both outlets are checked.",
+  "files": [
+    "generated:sine440_1s.wav"
+  ],
+  "tables": [
+    {
+      "name": "sine440_1s",
+      "file": "generated:sine440_1s.wav"
+    }
+  ]
+}

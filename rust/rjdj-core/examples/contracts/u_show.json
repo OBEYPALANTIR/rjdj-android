@@ -1,0 +1,57 @@
+{
+  "name": "u_show",
+  "args": [],
+  "source": "rj/u_show-help.pd:3-14 + rj/u_show.pd:2-8",
+  "duration_ms": 100,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "hello",
+        4
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 30,
+      "message": [
+        "clear"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 3,
+      "type": "any",
+      "exact": [
+        [
+          "set",
+          1,
+          2,
+          3
+        ],
+        [
+          "set",
+          "hello",
+          4
+        ],
+        [
+          "set"
+        ]
+      ]
+    }
+  ],
+  "notes": "Prepend set to printable messages so a message box displays rather than executes them. Any inlet1 message clears by outputting the empty set selector."
+}

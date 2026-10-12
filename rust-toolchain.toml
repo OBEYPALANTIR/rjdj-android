@@ -1,0 +1,5 @@
+# ScenePlayer's generateNotices task binds res/raw/notices_rust.txt to this exact rustc;
+# the pin applies to every cargo/rustc/cargo-ndk subprocess Gradle runs under the repo.
+[toolchain]
+channel = "1.96.1"
+targets = ["aarch64-linux-android"]

@@ -52,3 +52,6 @@ proguard/
 
 # Code
 .vscode/settings.json
+
+# Rust core build output (cargo, invoked by Gradle cargoNdk<Variant>)
+rust/rjdj-core/target/

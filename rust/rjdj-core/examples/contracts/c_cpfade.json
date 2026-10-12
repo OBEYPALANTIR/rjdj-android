@@ -1,0 +1,48 @@
+{
+  "name": "c_cpfade",
+  "args": [
+    0.5
+  ],
+  "source": "rj/c_cpfade-help.pd:19-35 + rj/c_cpfade.pd:2-20",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 400
+      }
+    },
+    {
+      "inlet": 1,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 800
+      }
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        0.5
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.34,
+        0.37
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    }
+  ],
+  "notes": "At crossfade 0.5, cosine/sine gains are sqrt(1/2), so two orthogonal 0.5-amplitude sinusoids retain total RMS sqrt(1/8), unlike the linear crossfader."
+}

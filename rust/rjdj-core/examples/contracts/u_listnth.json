@@ -1,0 +1,61 @@
+{
+  "name": "u_listnth",
+  "args": [
+    2
+  ],
+  "source": "rj/u_listnth-help.pd:7,11-23 + rj/u_listnth.pd:2-12",
+  "duration_ms": 100,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        2
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        10,
+        20,
+        30,
+        40
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 20,
+      "message": [
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        10,
+        20,
+        30,
+        40
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "float",
+      "exact": [
+        [
+          30
+        ],
+        [
+          10
+        ]
+      ]
+    }
+  ],
+  "notes": "Zero-based nth lookup implemented by a message-created $n selector. At index2 expect30; changing index to0 must return10. Only valid in-range indices are used."
+}

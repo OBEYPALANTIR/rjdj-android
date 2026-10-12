@@ -1,0 +1,102 @@
+{
+  "name": "c_frand",
+  "args": [
+    10,
+    20
+  ],
+  "source": "rj/c_frand-help.pd:3-15,25 + rj/c_frand.pd:2-16",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        10
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        20
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        "seed",
+        123
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 50,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 60,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 70,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 80,
+      "message": [
+        "bang"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 8,
+      "type": "float",
+      "range": [
+        10,
+        20
+      ]
+    }
+  ],
+  "notes": "Physical inlet order is trigger at x=119, lower limit x=255, upper x=330. Nonzero arguments avoid the no-argument default-path bang-to-float error recorded in prior instantiation evidence. Uniform values exclude 20, though the schema bound is inclusive."
+}

@@ -11,6 +11,8 @@ package org.puredata.android.scenes;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import android.content.ContentValues;
@@ -92,30 +94,15 @@ public class SceneDataBase {
 	}
 
     public void recoverScenes() throws IOException {
-        // Share the importer lock so recovery never removes an extraction in progress.
-        synchronized (SceneArchive.class) {
-            File[] folders = scenesRoot.listFiles();
-            if (folders == null) throw new IOException("Cannot inspect scene storage");
-            IOException failure = null;
-            for (File folder : folders) {
-                try {
-                    if (folder.getName().startsWith(".import-")) {
-                        SceneArchive.deleteOwnedTree(scenesRoot, folder);
-                    } else if (folder.isDirectory() && folder.getName().endsWith(".rj")) {
-                        SceneArchive.requireOwned(scenesRoot, folder);
-                        if (findSceneId(folder) >= 0) continue;
-                        SceneArchive.requireOwned(folder, new File(folder, "_main.pd"));
-                        SceneArchive.requireOwned(folder, new File(folder, "Info.plist"));
-                        if (!new File(folder, "_main.pd").isFile()) throw new IOException("Scene is missing _main.pd");
-                        addScene(folder);
-                    }
-                } catch (IOException e) {
-                    if (failure == null) failure = e;
-                    else failure.addSuppressed(e);
-                }
+        ArrayList<String> registered = new ArrayList<String>();
+        try (Cursor scenes = getAllScenes()) {
+            while (scenes.moveToNext()) {
+                String path = getString(scenes, SceneColumn.SCENE_DIRECTORY);
+                if (path != null) registered.add(new File(path).getName());
             }
-            if (failure != null) throw failure;
         }
+        RjdjCore.recoverScenes(scenesRoot.getAbsolutePath(), registered.toArray(new String[0]),
+                sceneDir -> addScene(new File(sceneDir)));
     }
 
 	private long findSceneId(File sceneFolder) {
@@ -129,7 +116,9 @@ public class SceneDataBase {
 	public long addScene(File sceneFolder) throws IOException {
 		long existing = findSceneId(sceneFolder);
 		if (existing >= 0) return existing;
-		Map<String, String> sceneInfo = SceneArchive.readInfo(sceneFolder);
+		String[] pairs = RjdjCore.readInfo(sceneFolder.getAbsolutePath());
+		Map<String, String> sceneInfo = new HashMap<String, String>();
+		for (int i = 0; i < pairs.length; i += 2) sceneInfo.put(pairs[i], pairs[i + 1]);
 		ContentValues values = new ContentValues();
 		for (SceneColumn column : SceneColumn.values()) {
 			String name = column.label;
@@ -146,7 +135,7 @@ public class SceneDataBase {
 		File recording = new File(path);
 		if (!recording.isFile()) return -1;
 		if (recording.length() == 0) {
-			try { SceneArchive.deleteOwnedTree(recordingsRoot, recording); }
+			try { RjdjCore.deleteOwnedTree(recordingsRoot.getAbsolutePath(), recording.getAbsolutePath()); }
 			catch (IOException e) { Log.w("SceneDataBase", "Unable to remove empty recording", e); }
 			return -1;
 		}
@@ -166,7 +155,7 @@ public class SceneDataBase {
         try { path = getString(cursor, SceneColumn.SCENE_DIRECTORY); }
         finally { if (cursor != null) cursor.close(); }
         if (path == null) throw new IOException("Scene no longer exists");
-        SceneArchive.deleteOwnedTree(scenesRoot, new File(path));
+        RjdjCore.deleteOwnedTree(scenesRoot.getAbsolutePath(), path);
         db.delete(TABLE_SCENES, sceneIdClause(id), null);
         // Recordings retain their own files and rows when their scene is removed.
     }
@@ -179,7 +168,7 @@ public class SceneDataBase {
         if (path == null) throw new IOException("Recording no longer exists");
         File recording = new File(path);
         if (recording.isDirectory()) throw new IOException("Recording path is not a file");
-        SceneArchive.deleteOwnedTree(recordingsRoot, recording);
+        RjdjCore.deleteOwnedTree(recordingsRoot.getAbsolutePath(), path);
         db.delete(TABLE_RECORDINGS, recordingIdClause(id), null);
     }
 

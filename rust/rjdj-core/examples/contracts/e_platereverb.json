@@ -1,0 +1,186 @@
+{
+  "name": "e_platereverb",
+  "args": [
+    "somename"
+  ],
+  "source": "rj/e_platereverb-help.pd:7-9,117-142 + rj/e_platereverb.pd:651-672,733-789",
+  "duration_ms": 1500,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "noise",
+        "amp": 0.2
+      }
+    },
+    {
+      "inlet": 1,
+      "signal": {
+        "kind": "noise",
+        "amp": 0.2
+      }
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "predelay",
+        0
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "bandwidth",
+        10000
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "damping",
+        6000
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "decay",
+        0.5
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "input_diffusion1",
+        0.75
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "input_diffusion2",
+        0.625
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "decay_diffusion1",
+        0.7
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "decay_diffusion2",
+        0.5
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "excursion",
+        0
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "dry",
+        0
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 200,
+      "message": [
+        "save"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.01,
+        0.5
+      ],
+      "window_ms": [
+        500,
+        1500
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.01,
+        0.5
+      ],
+      "window_ms": [
+        500,
+        1500
+      ]
+    },
+    {
+      "outlet": 2,
+      "kind": "control",
+      "min_messages": 10,
+      "type": "any",
+      "exact": [
+        [
+          "dry",
+          0
+        ],
+        [
+          "decay_diffusion2",
+          0.5
+        ],
+        [
+          "decay_diffusion1",
+          0.7
+        ],
+        [
+          "input_diffusion2",
+          0.625
+        ],
+        [
+          "excursion",
+          0
+        ],
+        [
+          "input_diffusion1",
+          0.75
+        ],
+        [
+          "decay",
+          0.5
+        ],
+        [
+          "damping",
+          6000
+        ],
+        [
+          "bandwidth",
+          10000
+        ],
+        [
+          "predelay",
+          0
+        ]
+      ]
+    }
+  ],
+  "notes": "Dattorro plate uses half the summed stereo input, allpass diffusion, damped decay and multi-tap stereo outputs. Broadband 0.2 noise avoids sine cancellation; bounded nonzero wet RMS is expected for decay 0.5 after the internal tank fills. Both real audio outlets and the ten-field state-save outlet are checked in the help report order."
+}

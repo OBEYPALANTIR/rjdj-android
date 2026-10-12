@@ -1,0 +1,60 @@
+{
+  "name": "c_ead",
+  "args": [
+    3,
+    200
+  ],
+  "source": "rj/c_ead-help.pd:10-20,31 + rj/c_ead.pd:2-33",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        3
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        200
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        "bang"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.1,
+        0.7
+      ],
+      "window_ms": [
+        10,
+        100
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        250,
+        1000
+      ],
+      "silent": true
+    }
+  ],
+  "notes": "Quartic attack/decay envelope rises in 3 ms and falls to zero over 200 ms; both phase duration inlets are exercised."
+}

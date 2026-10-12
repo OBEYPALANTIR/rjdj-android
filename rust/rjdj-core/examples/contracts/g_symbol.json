@@ -1,0 +1,43 @@
+{
+  "name": "g_symbol",
+  "args": [
+    "aux1"
+  ],
+  "source": "rj/g_symbol-help.pd:15-21 + rj/g_symbol.pd:2-12,29-37",
+  "duration_ms": 250,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "aux1",
+        "bus1"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "symbol",
+        "junk"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "exact": [
+        [
+          "aux1",
+          "bus1"
+        ],
+        [
+          "junk"
+        ]
+      ]
+    }
+  ],
+  "notes": "Tagged input updates the GUI using set (no duplicate emission); the inlet is also wired directly to the outlet, preserving matching and unmatched messages. This checks exact control passthrough and tag/value routing, not visual appearance or user mouse interaction."
+}

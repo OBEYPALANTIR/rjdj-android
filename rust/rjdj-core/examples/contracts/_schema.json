@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "rjlib per-abstraction real-engine contract",
+  "description": "Documentation schema; the Rust runner also checks source port arity, finite values, time windows and complete outlet coverage. It loads every sibling JSON except this file. See README.md for tick quantization, exact tolerance and quiet outlet semantics.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "source", "duration_ms", "stimuli", "expect", "notes"],
+  "properties": {
+    "name": {"type":"string", "pattern":"^[A-Za-z0-9_#~.-]+$", "description":"Non-help abstraction in rj/<name>.pd; must equal contract filename stem."},
+    "args": {"type":"array", "items":{"$ref":"#/$defs/atom"}, "default":[], "description":"Creation atoms in object-box order; explicit arguments resolve dynamic class boxes."},
+    "source": {"type":"string", "minLength":1, "description":"Evidence locations, e.g. rj/e_tremolo-help.pd:12-20 + rj/e_tremolo.pd:3."},
+    "duration_ms": {"type":"number", "exclusiveMinimum":0, "description":"22050 Hz audio length; 64-frame ticks, trimmed to floor(duration_ms*22050/1000) frames."},
+    "stimuli": {"type":"array", "items":{"$ref":"#/$defs/stimulus"}, "description":"Every inlet gets a stimulus or its omission is justified explicitly in notes."},
+    "expect": {"type":"array", "items":{"$ref":"#/$defs/expectation"}, "description":"Every actual outlet requires at least one correctly typed expectation."},
+    "notes": {"type":"string", "minLength":1, "description":"Documented behavior, unstimulated inlet justification, limitations and exact missing host objects."},
+    "files": {"type":"array", "items":{"type":"string"}, "default":[], "description":"Relative fixture paths copied into the wrapper; generated:sine440_1s.wav, generated:sine440_1s_stereo.wav, generated:seq-midi.txt, generated:index.txt and generated:index_stereo.txt are provided."},
+    "tables": {"type":"array", "items":{"$ref":"#/$defs/table"}, "default":[], "description":"Explicit caller-owned arrays filled by soundfiler from the first channel; no implicit arrays from files."},
+    "fixtures": {"type":"array", "items":{"$ref":"#/$defs/fixture"}, "default":[], "description":"Real auxiliary Pd boxes for caller infrastructure such as delay writers and state/bus companions."},
+    "feedback": {"type":"array", "items":{"$ref":"#/$defs/feedback"}, "default":[], "description":"Synchronous caller callback from an outlet through a Pd operation into an inlet."},
+    "expected_result": {"enum":["instantiates-with-errors"], "description":"Use only for a documented unavailable host object or documented connection/arity error. Measurable expectations still must pass; an expected error must actually occur."}
+  },
+  "$defs": {
+    "atom": {"oneOf":[{"type":"number"},{"type":"string"}]},
+    "bounds": {"type":"array", "items":{"type":"number"}, "minItems":2, "maxItems":2, "description":"Inclusive [lo,hi], finite and ordered."},
+    "message": {"type":"array", "items":{"$ref":"#/$defs/atom"}, "minItems":1, "description":"[number] float; [bang] bang; [symbol,value] symbol; numeric-led array or [list,...] list; [selector,...] anything message."},
+    "signal": {
+      "type":"object", "additionalProperties":false, "required":["kind"],
+      "properties": {
+        "kind":{"enum":["sine","noise","dc","silence"]},
+        "freq":{"type":"number", "minimum":0, "maximum":11025, "description":"Sine frequency in Hz."},
+        "amp":{"type":"number", "default":1, "description":"Peak generator amplitude; dc value. Silence always emits zero."}
+      },
+      "allOf":[{"if":{"properties":{"kind":{"const":"sine"}}},"then":{"required":["freq"]}}]
+    },
+    "stimulus": {
+      "type":"object", "additionalProperties":false,
+      "properties": {
+        "inlet":{"type":"integer", "minimum":0},
+        "receiver":{"type":"string", "minLength":1, "description":"Global receiver instead of inlet, e.g. #touch or rjqa_fixture0."},
+        "at_ms":{"type":"number", "minimum":0, "default":0, "description":"Inside duration; floor to containing tick; JSON order preserved within equal ticks."},
+        "signal":{"$ref":"#/$defs/signal"},
+        "message":{"$ref":"#/$defs/message"}
+      },
+      "allOf":[
+        {"oneOf":[{"required":["inlet"],"not":{"required":["receiver"]}},{"required":["receiver"],"not":{"required":["inlet"]}}]},
+        {"oneOf":[{"required":["signal"],"not":{"required":["message"]}},{"required":["message"],"not":{"required":["signal"]}}]},
+        {"if":{"required":["receiver"]},"then":{"required":["message"]}}
+      ]
+    },
+    "expectation": {
+      "type":"object", "additionalProperties":false, "required":["outlet","kind"],
+      "properties": {
+        "outlet":{"type":"integer", "minimum":0},
+        "kind":{"enum":["signal","control"]},
+        "rms":{"$ref":"#/$defs/bounds"},
+        "window_ms":{"$ref":"#/$defs/bounds", "description":"Half-open signal window [start,end), inside duration; default entire render."},
+        "centroid_hz":{"$ref":"#/$defs/bounds", "description":"Magnitude-weighted 1024-point Hann FFT, hop512, zero-padded final windows; silence 0 Hz."},
+        "silent":{"type":"boolean", "default":false, "description":"Signal RMS strictly below 1e-4."},
+        "changes_after_ms":{"type":"number", "exclusiveMinimum":0, "description":"Split the entire render; absolute RMS difference must exceed 20% of before RMS."},
+        "min_messages":{"type":"integer", "minimum":0, "description":"Positive lower bound; 0 alone means explicitly quiet and requires no messages."},
+        "type":{"enum":["float","bang","symbol","list","any"], "description":"Every captured message must match. Arbitrary selectors normalize to list, with selector retained."},
+        "range":{"$ref":"#/$defs/bounds", "description":"Every numeric atom in every control message; no-number messages fail."},
+        "exact":{"type":"array", "items":{"type":"array","items":{"$ref":"#/$defs/atom"}}, "description":"First-message prefix. Exact vector lengths and symbols; numeric tolerance abs(actual-expected)<=1e-6*max(1,abs(expected)). Bang is [bang]; symbol is [value]."}
+      },
+      "allOf":[
+        {"if":{"properties":{"kind":{"const":"signal"}}},"then":{"anyOf":[{"required":["rms"]},{"required":["centroid_hz"]},{"required":["changes_after_ms"]},{"required":["silent"],"properties":{"silent":{"const":true}}}],"not":{"anyOf":[{"required":["min_messages"]},{"required":["type"]},{"required":["range"]},{"required":["exact"]}]}}},
+        {"if":{"properties":{"kind":{"const":"control"}}},"then":{"not":{"anyOf":[{"required":["rms"]},{"required":["centroid_hz"]},{"required":["changes_after_ms"]},{"required":["window_ms"]},{"properties":{"silent":{"const":true}},"required":["silent"]}]}}}
+      ]
+    },
+    "table": {
+      "type":"object", "additionalProperties":false, "required":["name","file"],
+      "properties": {
+        "name":{"type":"string", "pattern":"^[A-Za-z0-9_#~.-]+$"},
+        "file":{"type":"string", "minLength":1, "description":"Copied/generated automatically even if not listed in files; soundfiler reads channel zero."}
+      }
+    },
+    "fixture": {
+      "type":"object", "additionalProperties":false, "required":["object"],
+      "properties": {
+        "object":{"type":"string", "minLength":1, "description":"Single Pd object declaration without brackets, semicolons, commas or newlines."},
+        "signal":{"$ref":"#/$defs/signal", "description":"Feeds fixture inlet0 continuously. Omit for receiver rjqa_fixture<index> feeding inlet0."}
+      }
+    },
+    "feedback": {
+      "type":"object", "additionalProperties":false, "required":["outlet","inlet","object"],
+      "properties": {
+        "outlet":{"type":"integer", "minimum":0},
+        "inlet":{"type":"integer", "minimum":0},
+        "object":{"type":"string", "minLength":1, "description":"Single real Pd operation, e.g. * 10, >= 3, +. Its first output connects synchronously to the contract inlet."}
+      }
+    }
+  }
+}

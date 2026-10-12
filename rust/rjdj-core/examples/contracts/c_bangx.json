@@ -1,0 +1,33 @@
+{
+  "name": "c_bangx",
+  "args": [
+    100
+  ],
+  "source": "rj/c_bangx-help.pd:3-15,32 + rj/c_bangx.pd:2-12",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        100
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        5
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 5,
+      "type": "bang"
+    }
+  ],
+  "notes": "Trigger a finite train of five bangs with 100 ms spacing. Source explicitly retriggers metro on the final delayed stop; min_messages does not assume the help text guarantees an exact count."
+}

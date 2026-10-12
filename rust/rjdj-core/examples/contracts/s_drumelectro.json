@@ -1,0 +1,43 @@
+{
+  "name": "s_drumelectro",
+  "args": [],
+  "source": "r/s_drumelectro-help.pd:1-18,148-151 + r/s_drumelectro.pd:3-43,45-48,443-462",
+  "duration_ms": 800,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "bd"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.03,
+        0.65
+      ],
+      "window_ms": [
+        25,
+        120
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        550,
+        800
+      ],
+      "silent": true
+    }
+  ],
+  "notes": "The documented bd message selects the kick synthesizer. Its c_ead 1/400 ms envelope sweeps an oscillator and switches DSP off at 400 ms: the early hit must have bounded RMS energy and the late window must be silent. This is synthesized percussion, not a sampler; no wav fixture is required."
+}

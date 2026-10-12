@@ -1,0 +1,49 @@
+{
+  "name": "e_phaser",
+  "args": [
+    "ph0"
+  ],
+  "source": "rj/e_phaser-help.pd:51,55-67 + rj/e_phaser.pd:4-32,41-44",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "freq",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "depth",
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.085,
+        0.135
+      ],
+      "window_ms": [
+        300,
+        1000
+      ]
+    }
+  ],
+  "notes": "Source sums dry audio with six unit-gain allpass stages. With depth=0 the coefficient is constant 0.97, not a bypass despite the help dry/wet wording. At 440 Hz/22050 Hz, abs(1+((z^-1-0.97)/(1-0.97*z^-1))^6) predicts RMS about 0.10: a phase-cancellation contract, not a generic non-silence test."
+}

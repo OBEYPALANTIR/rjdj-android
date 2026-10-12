@@ -1,0 +1,33 @@
+{
+  "name": "c_tobus",
+  "args": [
+    "ONE"
+  ],
+  "source": "rj/c_tobus-help.pd:11-19,23-24 + rj/c_tobus.pd:2-7",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "set",
+        "ONE"
+      ]
+    }
+  ],
+  "expect": [],
+  "notes": "Signal is thrown to the explicitly created named bus and the control inlet selects its target. This abstraction has no outlets; an empty expect array is intentional. Its public inlet contract and valid target are exercised here; c_frombus separately checks reception audio.",
+  "fixtures": [
+    {
+      "object": "c_bus ONE"
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "name": "u_listser",
+  "args": [],
+  "source": "rj/u_listser-help.pd:16-24 + rj/u_listser.pd:2-27",
+  "duration_ms": 100,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        10,
+        20,
+        30
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "bang"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 3,
+      "type": "float",
+      "exact": [
+        [
+          10
+        ],
+        [
+          20
+        ],
+        [
+          30
+        ]
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 1,
+      "type": "bang",
+      "exact": [
+        [
+          "bang"
+        ]
+      ]
+    }
+  ],
+  "notes": "Demand serializer consumes one atom per bang. The fourth request, after all three atoms are consumed, reports EOL on outlet1 and no data atom."
+}

@@ -1,0 +1,57 @@
+{
+  "name": "e_softclip",
+  "args": [
+    "softclipContract"
+  ],
+  "source": "rj/e_softclip-help.pd:10-21,41-42 + rj/e_softclip.pd:4-42,59-79",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "dry",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "drive",
+        1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "amp",
+        0.5
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.39,
+        0.46
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    }
+  ],
+  "notes": "Source table evaluates tanh(2*pi*x), addressed at 1000 input units against 2500 table units. Additional drive 1 doubles input, so output is 0.5*tanh((4*pi/2.5)*0.5*sin), predicting RMS about 0.42. Explicit source amp method scales the wet waveshaper, whose signal stays bounded below 0.5."
+}

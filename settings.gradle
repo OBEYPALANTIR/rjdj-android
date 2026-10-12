@@ -1,5 +1,3 @@
 rootProject.name = 'rjdj-android'
 
-includeBuild 'PdCore'
-
 include ':ScenePlayer'

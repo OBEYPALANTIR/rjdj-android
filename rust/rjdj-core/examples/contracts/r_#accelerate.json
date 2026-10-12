@@ -1,0 +1,33 @@
+{
+  "name": "r_#accelerate",
+  "args": [],
+  "source": "r/r_#accelerate-help.pd:22-26 + r/r_#accelerate.pd:2-4",
+  "duration_ms": 150,
+  "stimuli": [
+    {
+      "receiver": "#accelerate",
+      "at_ms": 20,
+      "message": [
+        0.1,
+        0.2,
+        1
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 1,
+      "type": "list",
+      "exact": [
+        [
+          0.1,
+          0.2,
+          1
+        ]
+      ]
+    }
+  ],
+  "notes": "No inlets: receives x/y/z accelerometer lists on the global #accelerate receiver and forwards them unchanged. This tests the documented desktop injection path, not a physical accelerometer."
+}

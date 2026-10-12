@@ -28,6 +28,10 @@ public class ImageOverlay extends Overlay {
 		image = BitmapFactory.decodeFile(filename);
 	}
 	
+	boolean hasImage() {
+		return image != null;
+	}
+	
 	public void setCentered(boolean flag) {
 		centered = flag;
 		invalidate();
@@ -46,12 +50,14 @@ public class ImageOverlay extends Overlay {
 	}
 	
 	public void setAlpha(float val) {
-		paint.setAlpha((int) (val * 255));
+		if (!Float.isFinite(val)) return;
+		paint.setAlpha((int) (Math.max(0.0f, Math.min(1.0f, val)) * 255));
 		invalidate();
 	}
 	
 	@Override
 	protected void drawImpl(Canvas canvas) {
+		if (image == null) return;
 		canvas.save();
 		int cw = container.getWidth();
 		int ch = container.getHeight();

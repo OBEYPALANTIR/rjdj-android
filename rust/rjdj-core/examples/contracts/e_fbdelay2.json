@@ -1,0 +1,101 @@
+{
+  "name": "e_fbdelay2",
+  "args": [
+    "stereoDelay",
+    2000
+  ],
+  "source": "rj/e_fbdelay2.pd:2-9,26-33 + rj/e_fbdelay-help.pd:3-27",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 880
+      }
+    },
+    {
+      "inlet": 2,
+      "signal": {
+        "kind": "dc",
+        "amp": 100
+      }
+    },
+    {
+      "inlet": 3,
+      "at_ms": 0,
+      "message": [
+        "feedback",
+        0.25
+      ]
+    },
+    {
+      "inlet": 3,
+      "at_ms": 0,
+      "message": [
+        "lpfreq",
+        10000
+      ]
+    },
+    {
+      "inlet": 3,
+      "at_ms": 0,
+      "message": [
+        "delay",
+        0
+      ]
+    },
+    {
+      "inlet": 3,
+      "at_ms": 0,
+      "message": [
+        "dry",
+        0
+      ]
+    },
+    {
+      "inlet": 3,
+      "at_ms": 0,
+      "message": [
+        "input",
+        1
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.4,
+        0.51
+      ],
+      "window_ms": [
+        400,
+        1000
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.38,
+        0.51
+      ],
+      "window_ms": [
+        400,
+        1000
+      ]
+    }
+  ],
+  "notes": "No e_fbdelay2-help.pd exists. Source is two independent e_fbdelay instances, sharing delay-time signal and method messages. Their two input pitches are integral cycles of 100 ms and should each be reinforced by positive feedback."
+}

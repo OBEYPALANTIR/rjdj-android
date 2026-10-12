@@ -1,0 +1,4 @@
+[target.aarch64-linux-android]
+# 16 KB page alignment (NDK r28+ defaults to this; kept explicit per the brief / P0-04).
+# Pd API exports for the rj_* externals are emitted by build.rs as a version script (EXT-02).
+rustflags = ["-C", "link-arg=-Wl,-z,max-page-size=16384"]

@@ -1,0 +1,73 @@
+{
+  "name": "u_samplebank2",
+  "args": [
+    "rjqa_bank2",
+    "sine440_1s_stereo.wav"
+  ],
+  "source": "rj/u_samplebank2-help.pd:20-36,46-49 + rj/u_samplebank2.pd:6-34",
+  "duration_ms": 100,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        "sr",
+        22050
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        "info"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "sr",
+        44100
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        "info"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 3,
+      "type": "list",
+      "exact": [
+        [
+          "rjqa_bank2",
+          1000,
+          22050,
+          22050
+        ],
+        [
+          "rjqa_bank2",
+          1000,
+          22050,
+          22050
+        ],
+        [
+          "rjqa_bank2",
+          500,
+          22050,
+          44100
+        ]
+      ]
+    }
+  ],
+  "notes": "Autoload the generated one-second stereo 22050-frame tone. Loading reports the four-field table metadata. Explicit info repeats it; changing declared file SR to44100 halves duration to500ms while keeping the sample count22050. The second creation argument is a real WAV basename, replacing the help intentionally absent file.",
+  "files": [
+    "generated:sine440_1s_stereo.wav"
+  ]
+}

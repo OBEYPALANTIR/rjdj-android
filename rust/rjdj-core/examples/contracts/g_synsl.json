@@ -1,0 +1,64 @@
+{
+  "name": "g_synsl",
+  "args": [
+    "gain",
+    0,
+    1
+  ],
+  "source": "rj/g_synsl-help.pd:23-35 + rj/g_synsl.pd:36-62",
+  "duration_ms": 250,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "gain",
+        0.5
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "abc",
+        21
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 60,
+      "message": [
+        "gain",
+        "color",
+        128
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 80,
+      "message": [
+        "gain",
+        "label",
+        "Gain"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "exact": [
+        [
+          "gain",
+          0.5
+        ],
+        [
+          "abc",
+          21
+        ]
+      ]
+    }
+  ],
+  "notes": "Numeric tagged values and unmatched messages pass unchanged. Matching color/label commands are consumed by routecolorlabel and do not add outlet messages. Visual slider state is not tested."
+}

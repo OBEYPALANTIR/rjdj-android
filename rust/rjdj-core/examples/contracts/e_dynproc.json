@@ -1,0 +1,114 @@
+{
+  "name": "e_dynproc",
+  "args": [
+    "MYDYN"
+  ],
+  "source": "rj/e_dynproc-help.pd:3-29,182 + rj/e_dynproc.pd:124-172,285-321",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "comp1",
+        1
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "comp2",
+        1
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "thresh",
+        70
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "att",
+        20
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "rel",
+        50
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "makeup",
+        50
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "dry",
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.17,
+        0.185
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.98,
+        1.02
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    },
+    {
+      "outlet": 2,
+      "kind": "control",
+      "min_messages": 0
+    }
+  ],
+  "notes": "Unit compression ratios make the source transfer function identity regardless of sidechain level, so gain envelope is 1 and 50% makeup halves input RMS. Both audio inlets are stimulated. Save-report outlet is explicitly quiet because no save request is sent; persistence roundtrip is outside this audio contract."
+}

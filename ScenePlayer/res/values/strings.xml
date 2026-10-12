@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="app_name">RjDj Revival</string>
+  <string name="notices_title">Notices</string>
+  <string name="notices_read_fail">Unable to read bundled notices.</string>
   <string name="playing">Playing</string>
   <string name="paused">Play</string>
   <string name="startrec">Record</string>
@@ -41,6 +43,8 @@
 <string name="no_recordings">No recordings</string>
 <string name="recording_not_saved">No recording was saved. This scene may not support recording.</string>
 <string name="microphone_access">Microphone access</string>
+<string name="mic_unavailable">Microphone unavailable. Playing without microphone input.</string>
+<string name="start_refused_background">Playback can only start while the scene is on screen.</string>
 <string name="microphone_settings_message">To play this scene, allow microphone access in Settings. Then return and tap Play.</string>
 <string name="open_settings">Open settings</string>
 <string name="settings_unavailable">Unable to open app settings</string>

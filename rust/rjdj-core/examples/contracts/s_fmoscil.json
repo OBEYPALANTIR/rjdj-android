@@ -1,0 +1,184 @@
+{
+  "name": "s_fmoscil",
+  "args": [
+    "COR-R2-fmoscil"
+  ],
+  "source": "r/s_fmoscil-help.pd:1-19,65-73 + r/s_fmoscil.pd:18-30,31-83,101-138",
+  "duration_ms": 1300,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "A",
+        2
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "D",
+        10
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "S",
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "R",
+        50
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mA",
+        2
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mD",
+        10
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mS",
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mR",
+        50
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "index",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "ratio",
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        69,
+        127
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 300,
+      "message": [
+        "save"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 800,
+      "message": [
+        69,
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.68,
+        0.74
+      ],
+      "window_ms": [
+        200,
+        700
+      ],
+      "centroid_hz": [
+        420,
+        460
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.68,
+        0.74
+      ],
+      "window_ms": [
+        200,
+        700
+      ],
+      "centroid_hz": [
+        420,
+        460
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        1000,
+        1300
+      ],
+      "silent": true
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        1000,
+        1300
+      ],
+      "silent": true
+    },
+    {
+      "outlet": 2,
+      "kind": "control",
+      "min_messages": 10,
+      "type": "list",
+      "range": [
+        0,
+        100
+      ]
+    }
+  ],
+  "notes": "Index 0 disables frequency modulation while ratio 1 and note 69 set the carrier to 440 Hz. Velocity 127 and ADSR sustain 100 yield a unit-peak sine, RMS 1/sqrt(2), duplicated to both audio outlets as help describes. Note-off with R=50 ms must yield silence in both late windows. save must return all ten configured parameter/value lists. Self-contained FM oscillator; no wav file."
+}

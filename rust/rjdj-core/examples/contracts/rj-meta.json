@@ -1,0 +1,9 @@
+{
+  "name": "rj-meta",
+  "args": [],
+  "source": "r/rj-meta.pd:1-11 (no help patch in pinned rj library)",
+  "duration_ms": 100,
+  "stimuli": [],
+  "expect": [],
+  "notes": "Library metadata only: no inlets, outlets, audio generators or receivers exist. There is no inlet stimulus or outlet expectation to omit; its full observable contract is error-free instantiation with no events or audio."
+}

@@ -1,0 +1,60 @@
+{
+  "name": "_markovanal",
+  "args": [
+    "contractMarkov",
+    4,
+    2
+  ],
+  "source": "rj/_markovanal.pd:2-28",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "reset"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        3
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        1
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 1,
+      "type": "float",
+      "exact": [
+        [
+          2
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    }
+  ],
+  "notes": "Private transition-count helper: each state input increments its bin and emits its creation-argument id (2). Right inlet accepts reset/dump through route. No _markovanal-help.pd exists; dump is sent to contractMarkov-dumped-it, not the sole outlet."
+}

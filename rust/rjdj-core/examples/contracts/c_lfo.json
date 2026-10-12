@@ -1,0 +1,65 @@
+{
+  "name": "c_lfo",
+  "args": [
+    "MYLFO2",
+    1,
+    50,
+    "sine"
+  ],
+  "source": "rj/c_lfo-help.pd:21,32-51 + rj/c_lfo.pd:58-69,116-134",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "updates",
+        50
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "waveform",
+        "sine"
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "phase",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "on",
+        1
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 10,
+      "type": "float",
+      "range": [
+        -0.001,
+        1.001
+      ]
+    }
+  ],
+  "notes": "One-Hz control oscillator sampled every 50 ms produces normalized sine-wave values in 0..1; nametag and waveform use the help example."
+}

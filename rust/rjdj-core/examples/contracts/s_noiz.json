@@ -1,0 +1,346 @@
+{
+  "name": "s_noiz",
+  "args": [
+    "rjqa_s_noiz"
+  ],
+  "source": "rj/s_noiz-help.pd:75 + rj/s_noiz-help.pd:329-352 + rj/s_noiz.pd:2-9,84-89",
+  "duration_ms": 1500,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mod3c",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mod3d",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mod3b",
+        0.0740945
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mod3a",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mod2d",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mod2c",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mod2b",
+        0.385827
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mod2a",
+        0.393701
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mod1d",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mod1c",
+        0.244094
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mod1b",
+        0.0708661
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "mod1a",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "osc3d",
+        0.385827
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "osc3c",
+        0.499764
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "osc3b",
+        0.0708661
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "osc3a",
+        1.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "osc2d",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "osc2c",
+        0.120945
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "osc2b",
+        0.173228
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "osc2a",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "osc1d",
+        0.448819
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "osc1c",
+        0.346457
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "osc1b",
+        0.377953
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "osc1a",
+        1.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "env3r",
+        0.0294488
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "env3s",
+        1.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "env3d",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "env3a",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "env2r",
+        0.0213386
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "env2s",
+        0.0314961
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "env2d",
+        0.035748
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "env2a",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "env1r",
+        0.0393701
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "env1s",
+        1.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "env1d",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "env1a",
+        0.0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 50,
+      "message": [
+        60,
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 900,
+      "message": [
+        "save"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 1200,
+      "message": [
+        60,
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.0005,
+        1.5
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 36,
+      "type": "any",
+      "range": [
+        0,
+        1
+      ]
+    }
+  ],
+  "notes": "Multiband modulated noise synthesizer. Send the documented numeric preset before MIDI pitch/velocity. The nonzero bounded audio checks the note path; save must return the 36 dispatched parameters, all in [0,1]. GUI-only label/color entries from the preset are deliberately not sent. Creation tag replaces the example parent $0-TAG with a unique literal. Parameters absent from the numeric preset are initialized explicitly to 0 before it, so save has a value for all 36 parameter names."
+}

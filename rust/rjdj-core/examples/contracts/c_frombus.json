@@ -1,0 +1,43 @@
+{
+  "name": "c_frombus",
+  "args": [
+    "ONE"
+  ],
+  "source": "rj/c_frombus-help.pd:8-22 + rj/c_frombus.pd:2-7",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        "set",
+        "ONE"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.34,
+        0.37
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    }
+  ],
+  "notes": "Receives the named mono signal and accepts a set message to select its source. A real send~ fixture provides the bus signal instead of certifying an unconnected receiver.",
+  "fixtures": [
+    {
+      "object": "s~ ONE",
+      "signal": {
+        "kind": "sine",
+        "freq": 440,
+        "amp": 0.5
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "name": "e_sdelay",
+  "args": [
+    500
+  ],
+  "source": "rj/e_sdelay-help.pd:17,23-31 + rj/e_sdelay.pd:2-18",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        100
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        0,
+        80
+      ],
+      "silent": true
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.34,
+        0.37
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    }
+  ],
+  "notes": "Static delay is bounded by creation argument 500 ms; setting 100 ms leaves the first 80 ms silent and then preserves sine RMS. Early silence checks actual time-delay behavior instead of a mere pass-through."
+}

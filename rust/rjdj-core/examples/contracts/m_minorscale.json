@@ -1,0 +1,98 @@
+{
+  "name": "m_minorscale",
+  "args": [
+    60,
+    "natural",
+    0
+  ],
+  "source": "rj/m_minorscale-help.pd:5-29 + rj/m_minorscale.pd:5-11,29-43,67-79,115-159",
+  "duration_ms": 500,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 20,
+      "message": [
+        "auto",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 40,
+      "message": [
+        "mode",
+        "natural"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 60,
+      "message": [
+        2
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 80,
+      "message": [
+        6
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 100,
+      "message": [
+        "mode",
+        "harmonic"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 120,
+      "message": [
+        6
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 140,
+      "message": [
+        48
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 160,
+      "message": [
+        2
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 4,
+      "type": "float",
+      "exact": [
+        [
+          63
+        ],
+        [
+          70
+        ],
+        [
+          71
+        ],
+        [
+          51
+        ]
+      ],
+      "range": [
+        48,
+        72
+      ]
+    }
+  ],
+  "notes": "Natural minor degree2 is3semitones and degree6 is10; harmonic raises degree6 to11. Base48 then degree2->51. Chosen degrees avoid the source tables misleading sixth-degree values; this is a concrete natural/harmonic mapping contract."
+}

@@ -1,0 +1,91 @@
+{
+  "name": "e_mcompressor",
+  "args": [
+    67,
+    2
+  ],
+  "source": "rj/e_mcompressor-help.pd:3-16,35 + rj/e_mcompressor.pd:2-22,64-90,91-116",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 220
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "threshold",
+        67
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "ratio",
+        2
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "switch",
+        1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "gui-state",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 100,
+      "message": [
+        "load"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.075,
+        0.105
+      ],
+      "window_ms": [
+        400,
+        1000
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "any",
+      "exact": [
+        [
+          "gui",
+          "ratio",
+          2
+        ],
+        [
+          "gui",
+          "threshold",
+          67
+        ]
+      ]
+    }
+  ],
+  "notes": "Creation args from help resolve dynamic $1/$2 number objects to threshold 67 and ratio 2. env~ sine level about 90.97 dB is compressed to about 78.98 dB, predicting RMS 0.089 after 40 ms smoothing. Physical outlet 0 is audio, outlet 1 is GUI control; load reports ratio then threshold and metering is disabled."
+}

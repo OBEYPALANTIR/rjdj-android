@@ -1,0 +1,69 @@
+{
+  "name": "m_ms2beat",
+  "args": [
+    120
+  ],
+  "source": "rj/m_ms2beat-help.pd:10-22 + rj/m_ms2beat.pd:2-10,27-34",
+  "duration_ms": 300,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 20,
+      "message": [
+        120
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        500
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 60,
+      "message": [
+        1000
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 80,
+      "message": [
+        60
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        500
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 3,
+      "type": "float",
+      "exact": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          0.5
+        ]
+      ],
+      "range": [
+        0.5,
+        2
+      ]
+    }
+  ],
+  "notes": "Beats=milliseconds/(60000/bpm).500/1000ms at120BPM give1/2beats;500ms at60BPM gives0.5beats."
+}

@@ -1,0 +1,45 @@
+{
+  "name": "a_breath",
+  "args": [],
+  "source": "rj/a_breath-help.pd:10-14,22-27 + rj/a_breath.pd:2-26",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "threshold",
+        70
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "latency",
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 5,
+      "type": "float",
+      "range": [
+        0.9,
+        1.001
+      ]
+    }
+  ],
+  "notes": "Mic energy is mapped through u_sigm into normalized breath strength. A sustained 0.5 sine is above threshold 70; latency 0 disables follower smoothing."
+}

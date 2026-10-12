@@ -1,0 +1,111 @@
+{
+  "name": "s_loopsmooth",
+  "args": [
+    "mytable"
+  ],
+  "source": "rj/s_loopsmooth-help.pd:47,53-71 + rj/s_loopsmooth.pd:29-41,85-97",
+  "duration_ms": 1800,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "table",
+        "rjqa_sample"
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "sr",
+        22050
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "dur",
+        200
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "loopstart",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "chunk-size",
+        5
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "transposition",
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "start"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 800,
+      "message": [
+        "stop"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.08,
+        0.6
+      ],
+      "window_ms": [
+        250,
+        650
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 3,
+      "type": "bang"
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "window_ms": [
+        1500,
+        1800
+      ],
+      "silent": true
+    }
+  ],
+  "notes": "Smooth loop reader based on s_playolap. Loop duration is 200 ms and each loop completion emits a bang. Stop closes the smoothed audio gate; the late window allows lop~ 5 to settle. No file chooser is needed because the mono table fixture is preloaded.",
+  "files": [
+    "generated:sine440_1s.wav"
+  ],
+  "tables": [
+    {
+      "name": "rjqa_sample",
+      "file": "generated:sine440_1s.wav"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "name": "e_lop4",
+  "args": [
+    1000,
+    2
+  ],
+  "source": "rj/e_lop4-help.pd:8-21 + rj/e_lop4.pd:2-12",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 4000
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        1000
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        0.7071
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.0004,
+        0.002
+      ],
+      "window_ms": [
+        300,
+        1000
+      ]
+    }
+  ],
+  "notes": "Source cascades two matching second-order lowpasses. At 4000 Hz with 1000 Hz cutoff and Butterworth Q, gain is squared relative to e_lop2, yielding RMS around 0.0009 rather than an arbitrary nonzero output."
+}

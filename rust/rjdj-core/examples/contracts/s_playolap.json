@@ -1,0 +1,73 @@
+{
+  "name": "s_playolap",
+  "args": [
+    "MYSAMPLER"
+  ],
+  "source": "rj/s_playolap-help.pd:20-36,50 + rj/s_playolap.pd:2-36,42-54,93-139",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "dc",
+        "amp": 2205
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "table",
+        "rjqa_sample"
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "sr",
+        22050
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "chunk-size",
+        5
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "transposition",
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.1,
+        0.55
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    }
+  ],
+  "notes": "Overlap-add table reader. Read-position is fixed at sample 2205, with two half-cosine windows half a cycle apart and zero transposition. Source multiplies chunk-size by 0.01 (despite the help ms label), so 5 gives 50 ms / 22 cycles at 440 Hz; overlapping grains stay audible and bounded. Source SR is supplied explicitly.",
+  "files": [
+    "generated:sine440_1s.wav"
+  ],
+  "tables": [
+    {
+      "name": "rjqa_sample",
+      "file": "generated:sine440_1s.wav"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "name": "g_showimage",
+  "args": [
+    "some.jpg",
+    200,
+    100
+  ],
+  "source": "rj/g_showimage-help.pd:2-5,35-48 + rj/g_showimage.pd:2-14,31-50",
+  "duration_ms": 250,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 30,
+      "message": [
+        "pos",
+        160,
+        160
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 50,
+      "message": [
+        "move",
+        100,
+        200
+      ]
+    }
+  ],
+  "expect": [],
+  "notes": "Display-only abstraction has no outlets. Both show/hide and positional control inlets are exercised; rj_image forwards host image commands. some.jpg is the filename used by the help example, not a bundled asset: actual image decoding, touchscreen placement and rendering cannot be certified by an outletless libpd contract."
+}

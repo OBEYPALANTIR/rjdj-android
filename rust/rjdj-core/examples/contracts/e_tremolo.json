@@ -1,0 +1,49 @@
+{
+  "name": "e_tremolo",
+  "args": [
+    "mtrem"
+  ],
+  "source": "rj/e_tremolo-help.pd:11-22 + rj/e_tremolo.pd:2-12,30-42",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 20,
+      "message": [
+        "freq",
+        10
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 30,
+      "message": [
+        "dry",
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.18,
+        0.25
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    }
+  ],
+  "notes": "Wet multiplication by (1+cos(2*pi*10*t))/2 gives RMS 0.5*sqrt(3/16), approximately 0.2165, for a 440 Hz sine. Both audio and control inlets are driven."
+}

@@ -1,0 +1,42 @@
+{
+  "name": "g_tgl",
+  "args": [
+    "square"
+  ],
+  "source": "rj/g_tgl-help.pd:23-29 + rj/g_tgl.pd:2-12,29-36",
+  "duration_ms": 250,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "square",
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "passthrough"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "exact": [
+        [
+          "square",
+          1
+        ],
+        [
+          "passthrough"
+        ]
+      ]
+    }
+  ],
+  "notes": "Tagged input updates the GUI using set (no duplicate emission); the inlet is also wired directly to the outlet, preserving matching and unmatched messages. This checks exact control passthrough and tag/value routing, not visual appearance or user mouse interaction."
+}

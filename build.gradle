@@ -20,5 +20,4 @@ ext {
     compileSdk = 37
     androidxLegacySupportVersion = '1.0.0'
     ndkVersion = libs.versions.ndk.get()
-    pdCoreVersion = '1.4.2-SNAPSHOT' // Must match version in PdCore/build.gradle
 }

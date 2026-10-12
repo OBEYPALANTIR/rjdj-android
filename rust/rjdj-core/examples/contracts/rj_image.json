@@ -1,0 +1,54 @@
+{
+  "name": "rj_image",
+  "args": [
+    "path/to/image.png"
+  ],
+  "source": "r/rj_image-help.pd:3-20 + r/rj_image.pd:1-3",
+  "duration_ms": 150,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "visible",
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "move",
+        160,
+        120
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 60,
+      "message": [
+        "scale",
+        1,
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 80,
+      "message": [
+        "alpha",
+        0.5
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        "visible",
+        0
+      ]
+    }
+  ],
+  "expect": [],
+  "notes": "The pinned source is explicitly dummy [rj_image]: its single inlet is disconnected and it has no outlets or command receiver. The public visible/move/scale/alpha messages can be delivered without error, but image loading, rendering and host commands are UNTESTABLE with this source; passing this fixture does not certify the iDevice renderer."
+}

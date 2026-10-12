@@ -1,0 +1,54 @@
+{
+  "name": "c_mphasor",
+  "args": [
+    0.3,
+    20
+  ],
+  "source": "rj/c_mphasor-help.pd:19,34-43 + rj/c_mphasor.pd:2-12,38-68",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        "updates",
+        20
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        0.3
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        0.25
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        "on",
+        1
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 20,
+      "type": "float",
+      "range": [
+        0,
+        1
+      ]
+    }
+  ],
+  "notes": "Message phasor ramps upward at 0.3 Hz with 20 ms updates; phase inlet explicitly initializes it to 0.25. Source wraps positive and negative phase values into 0..1."
+}

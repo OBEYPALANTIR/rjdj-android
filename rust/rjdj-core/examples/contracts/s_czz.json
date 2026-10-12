@@ -1,0 +1,359 @@
+{
+  "name": "s_czz",
+  "args": [
+    "COR-R2-czz"
+  ],
+  "source": "r/s_czz-help.pd:105-114,260-280 + r/s_czz.pd:90-127,206-242,280-285",
+  "duration_ms": 2000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1a",
+        0.0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1d",
+        0.952756
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1s",
+        0.110236
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env1r",
+        0.149606
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2a",
+        0.141732
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2d",
+        0.251969
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2s",
+        0.0866142
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env2r",
+        0.0866142
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3a",
+        0.259843
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3d",
+        0.314961
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3s",
+        0.15748
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "env3r",
+        0.133858
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1a",
+        0.401575
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1b",
+        0.0629921
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1c",
+        0.905512
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc1d",
+        0.503937
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2a",
+        0.377953
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2b",
+        0.543307
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2c",
+        0.645669
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc2d",
+        0.559055
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3a",
+        0.409449
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3b",
+        0.527559
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3c",
+        0.220472
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "osc3d",
+        0.314961
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1a",
+        0.133858
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1b",
+        0.511811
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1c",
+        0.669291
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod1d",
+        0.574803
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2a",
+        0.472441
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2b",
+        0.220472
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2c",
+        0.393701
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod2d",
+        0.141732
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3a",
+        0.275591
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3b",
+        0.173228
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3c",
+        0.181102
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 10,
+      "message": [
+        "mod3d",
+        0.165354
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 100,
+      "message": [
+        60,
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 300,
+      "message": [
+        "save"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 900,
+      "message": [
+        60,
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.002,
+        0.7
+      ],
+      "window_ms": [
+        650,
+        850
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0,
+        0.0001
+      ],
+      "window_ms": [
+        1950,
+        2000
+      ],
+      "silent": true
+    },
+    {
+      "outlet": 1,
+      "kind": "control",
+      "min_messages": 36,
+      "type": "list",
+      "range": [
+        0,
+        1
+      ]
+    }
+  ],
+  "notes": "Uses all 36 values of help Gentle-Sync. Dual bounded square oscillators feed a resonant filter and env3 VCA; env3 attack is 519.686 ms and final gain is 5*mod3d=0.82677, predicting audible but bounded energy after the attack. Note-off at 900 ms plus env3 release 937.006 ms predicts silence by the last 50 ms. Both MIDI/control inlets and audio/state outlets are checked; save returns 36 lists in the help 0..1 range. No wav is consumed by this oscillator synthesizer."
+}

@@ -1,0 +1,70 @@
+{
+  "name": "m_accel_roll",
+  "args": [],
+  "source": "rj/m_accel_roll-help.pd:5-11 + rj/m_accel_roll.pd:2-14",
+  "duration_ms": 300,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        1
+      ]
+    },
+    {
+      "receiver": "#accelerate",
+      "at_ms": 40,
+      "message": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "receiver": "#accelerate",
+      "at_ms": 60,
+      "message": [
+        1,
+        0,
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 80,
+      "message": [
+        0
+      ]
+    },
+    {
+      "receiver": "#accelerate",
+      "at_ms": 100,
+      "message": [
+        -1,
+        0,
+        1
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "float",
+      "exact": [
+        [
+          0
+        ],
+        [
+          0.7853981634
+        ]
+      ],
+      "range": [
+        -0.001,
+        0.79
+      ]
+    }
+  ],
+  "notes": "Source computes atan(x/z) in radians; chosen vectors give0 andpi/4. Input gate0 blocks the final negative roll."
+}

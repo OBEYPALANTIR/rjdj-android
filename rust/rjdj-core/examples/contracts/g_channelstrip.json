@@ -1,0 +1,114 @@
+{
+  "name": "g_channelstrip",
+  "args": [
+    "chan1"
+  ],
+  "source": "rj/g_channelstrip-help.pd:33-38,53-55 + rj/g_channelstrip.pd:15-23,46-69 + rj/u_channelstrip.pd:2-46",
+  "duration_ms": 2000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 20,
+      "message": [
+        "mute",
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 30,
+      "message": [
+        "level",
+        100
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 40,
+      "message": [
+        "pan",
+        0.5
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 50,
+      "message": [
+        "aux1",
+        0.25
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 60,
+      "message": [
+        "aux2",
+        0.5
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.2,
+        0.28
+      ],
+      "window_ms": [
+        1000,
+        2000
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.2,
+        0.28
+      ],
+      "window_ms": [
+        1000,
+        2000
+      ]
+    },
+    {
+      "outlet": 2,
+      "kind": "signal",
+      "rms": [
+        0.075,
+        0.1
+      ],
+      "window_ms": [
+        1000,
+        2000
+      ]
+    },
+    {
+      "outlet": 3,
+      "kind": "signal",
+      "rms": [
+        0.15,
+        0.2
+      ],
+      "window_ms": [
+        1000,
+        2000
+      ]
+    },
+    {
+      "outlet": 4,
+      "kind": "control",
+      "min_messages": 0
+    }
+  ],
+  "notes": "At Pd100dB the settled mono gain is1; equal-power center pan gives each side RMS0.25, and postfader aux gains0.25/0.5 give RMS0.0884/0.1768. Outlet4 is quiet without the GUI save action. SOURCE DEFECT: the public control inlet at line20 has no connection, so this audible help-derived contract is expected to expose failure rather than certify default silence. Aux destinations retain internal dummy catches; no external buses are required."
+}

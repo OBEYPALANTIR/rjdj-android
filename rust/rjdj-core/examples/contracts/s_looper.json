@@ -1,0 +1,106 @@
+{
+  "name": "s_looper",
+  "args": [
+    "rjqa_looper",
+    "sine440_1s_stereo.wav"
+  ],
+  "source": "rj/s_looper-help.pd:18-49 + rj/s_looper.pd:10-15,32-42,81-102",
+  "duration_ms": 1800,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        "sr",
+        22050
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        "info"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "loop",
+        1
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 1250,
+      "message": [
+        "loop",
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.34,
+        0.36
+      ],
+      "window_ms": [
+        200,
+        600
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.34,
+        0.36
+      ],
+      "window_ms": [
+        200,
+        600
+      ]
+    },
+    {
+      "outlet": 2,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "bang"
+    },
+    {
+      "outlet": 3,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "list",
+      "range": [
+        0,
+        22050
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "window_ms": [
+        1500,
+        1800
+      ],
+      "silent": true
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "window_ms": [
+        1500,
+        1800
+      ],
+      "silent": true
+    }
+  ],
+  "notes": "Stereo file looper autoloads the generated identical-channel one-second tone through u_samplebank2. loop 1 plays immediately and again at one second, each start emits bang (outlet2); metadata outlet3 reports table base/duration1000/samplecount22050/SR22050. loop0 stops both channels. Filename replaces the help example intentionally missing WAV.",
+  "files": [
+    "generated:sine440_1s_stereo.wav"
+  ]
+}

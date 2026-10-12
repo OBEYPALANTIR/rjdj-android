@@ -1,0 +1,66 @@
+{
+  "name": "u_loader",
+  "args": [
+    "SOMETAG",
+    "rjqa_state"
+  ],
+  "source": "rj/u_loader-help.pd:3-17,44-50,103-120 + rj/u_loader.pd:2-18",
+  "duration_ms": 100,
+  "stimuli": [
+    {
+      "receiver": "rjqa_state-SSSAD",
+      "at_ms": 10,
+      "message": [
+        "one",
+        7
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "save"
+      ]
+    },
+    {
+      "receiver": "RJ_SCENE_LOAD",
+      "at_ms": 30,
+      "message": [
+        "SOMETAG",
+        "one",
+        11
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "save"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 2,
+      "type": "any",
+      "exact": [
+        [
+          "one",
+          7
+        ],
+        [
+          "one",
+          11
+        ]
+      ]
+    }
+  ],
+  "notes": "State bridge connects the SOMETAG local namespace to RJ_SCENE_LOAD/SAVE and reports persist payloads at its outlet. The actual u_sssad companion stores one=7; local save must report it, global restore changes it to11, and a second save must report11. It is a real state participant, not injected fake output.",
+  "fixtures": [
+    {
+      "object": "u_sssad one rjqa_state"
+    }
+  ]
+}

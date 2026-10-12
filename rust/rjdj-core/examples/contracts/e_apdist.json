@@ -1,0 +1,57 @@
+{
+  "name": "e_apdist",
+  "args": [
+    "name"
+  ],
+  "source": "rj/e_apdist-help.pd:42,46-59 + rj/e_apdist.pd:2-41",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "lop",
+        500
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "drive",
+        1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        "dry",
+        0
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.15,
+        0.65
+      ],
+      "window_ms": [
+        200,
+        1000
+      ]
+    }
+  ],
+  "notes": "Fully wet coefficient-modulated allpass distortion; a 500 Hz lowpass and unit drive keep the signal-derived coefficient bounded below the source clip limit. The nonlinear allpass redistributes energy, so the RMS band is wider than an identity-filter contract. A wav is only the help example source; the abstraction accepts an equivalent generated signal and needs no wav."
+}

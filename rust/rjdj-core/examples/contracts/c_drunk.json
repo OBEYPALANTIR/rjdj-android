@@ -1,0 +1,110 @@
+{
+  "name": "c_drunk",
+  "args": [
+    10,
+    2
+  ],
+  "source": "rj/c_drunk-help.pd:21-34 + rj/c_drunk.pd:41-64,96-111",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        10
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        2
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        "seed",
+        1234
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        "set",
+        5
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 50,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 70,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 90,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 110,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 130,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 150,
+      "message": [
+        "bang"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 8,
+      "type": "float",
+      "range": [
+        0,
+        10
+      ]
+    }
+  ],
+  "notes": "Random walk stays within the explicit 0..10 bound with maximum step size 2; seeded for reproducibility without assuming a particular Pd RNG sequence."
+}

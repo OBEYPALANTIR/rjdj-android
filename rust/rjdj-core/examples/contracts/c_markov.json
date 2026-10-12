@@ -1,0 +1,127 @@
+{
+  "name": "c_markov",
+  "args": [
+    4
+  ],
+  "source": "rj/c_markov-help.pd:33-44,245-254 + rj/c_markov.pd:31-77,175-208",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        1,
+        0,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        2,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "inlet": 1,
+      "at_ms": 0,
+      "message": [
+        3,
+        1,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 0,
+      "message": [
+        "set",
+        0
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 10,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 20,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 30,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 40,
+      "message": [
+        "bang"
+      ]
+    },
+    {
+      "inlet": 0,
+      "at_ms": 50,
+      "message": [
+        "bang"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "control",
+      "min_messages": 5,
+      "type": "float",
+      "range": [
+        0,
+        3
+      ],
+      "exact": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ],
+        [
+          0
+        ],
+        [
+          1
+        ]
+      ]
+    }
+  ],
+  "notes": "One-hot transition rows make the 0->1->2->3->0 cycle deterministic. Opening with four states also exercises the source message-created u_wrandom objects and route/select wiring."
+}

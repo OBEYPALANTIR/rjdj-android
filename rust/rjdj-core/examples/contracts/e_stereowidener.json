@@ -1,0 +1,95 @@
+{
+  "name": "e_stereowidener",
+  "args": [
+    0.5
+  ],
+  "source": "rj/e_stereowidener-help.pd:4-18,35 + rj/e_stereowidener.pd:2-18",
+  "duration_ms": 1000,
+  "stimuli": [
+    {
+      "inlet": 0,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 440
+      }
+    },
+    {
+      "inlet": 1,
+      "signal": {
+        "kind": "sine",
+        "amp": 0.5,
+        "freq": 880
+      }
+    },
+    {
+      "inlet": 2,
+      "at_ms": 0,
+      "message": [
+        "width",
+        0
+      ]
+    },
+    {
+      "inlet": 2,
+      "at_ms": 500,
+      "message": [
+        "width",
+        1
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.24,
+        0.26
+      ],
+      "window_ms": [
+        200,
+        450
+      ]
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.24,
+        0.26
+      ],
+      "window_ms": [
+        200,
+        450
+      ]
+    },
+    {
+      "outlet": 0,
+      "kind": "signal",
+      "rms": [
+        0.54,
+        0.58
+      ],
+      "window_ms": [
+        700,
+        1000
+      ],
+      "changes_after_ms": 500
+    },
+    {
+      "outlet": 1,
+      "kind": "signal",
+      "rms": [
+        0.54,
+        0.58
+      ],
+      "window_ms": [
+        700,
+        1000
+      ],
+      "changes_after_ms": 500
+    }
+  ],
+  "notes": "Independent stereo tones meet the documented non-mono prerequisite. width 0 produces (L+R)/2 and RMS 0.25 in both outputs. width 1 gives 1.5L-0.5R and 1.5R-0.5L, with RMS sqrt(0.3125)=0.559; the change must exceed 20% after the 80 Hz smoothing."
+}
