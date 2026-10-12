@@ -100,19 +100,24 @@ fn stage(root: &Path) -> Result<PathBuf> {
     }
 }
 
-fn extract(spool: &mut File, staging: &Path) -> Result<()> {
+fn extract(spool: &mut (impl Read + Seek), staging: &Path) -> Result<()> {
     let mut entries = find_central_directory(spool)?;
     entries.sort_unstable_by_key(|entry| entry.0);
+    let length = spool.seek(SeekFrom::End(0))?;
     let mut paths = HashSet::new();
     let mut total = 0u64;
     let mut buffer = [0u8; 8192];
-    for (offset, compressed, crc) in entries {
+    for (index, &(offset, compressed, crc)) in entries.iter().enumerate() {
         spool.seek(SeekFrom::Start(offset))?;
+        // zip's streaming reader drains the declared compressed extent on drop; bound each
+        // record to the span before the next one so overlapping extents cannot re-read the spool.
+        let span = entries.get(index + 1).map_or(length, |next| next.0) - offset;
+        let mut record = spool.by_ref().take(span);
         // Read names from the local header, as Java ZipInputStream does, not the central directory.
         let options = ZipReadOptions::new()
             .override_compressed_size(compressed)
             .override_crc(crc);
-        let mut entry = read_zipfile_from_stream_with_options(spool, options)
+        let mut entry = read_zipfile_from_stream_with_options(&mut record, options)
             .map_err(zip_error)?
             .ok_or_else(|| CoreError::new(ONE_SCENE))?;
         let name = entry.name().map_err(zip_error)?;
@@ -184,7 +189,7 @@ fn validate_name(name: &str) -> Result<()> {
     Ok(())
 }
 
-fn find_central_directory(spool: &mut File) -> Result<Vec<CentralEntry>> {
+fn find_central_directory(spool: &mut (impl Read + Seek)) -> Result<Vec<CentralEntry>> {
     let length = spool.seek(SeekFrom::End(0))?;
     let mut buffer = [0; 8192];
     let mut end = length;
@@ -563,4 +568,76 @@ fn mismatched_zip64_locator_is_checked_with_fixed_reads_only() {
     let position = spool.locator + 20;
     let length = position + 22;
     assert_eq!(central_directory_at(&mut spool, position, length).unwrap(), None);
+}
+
+#[cfg(test)]
+#[test]
+fn overlapping_compressed_spans_are_read_at_most_once() {
+    struct Counted {
+        cursor: io::Cursor<Vec<u8>>,
+        read: u64,
+    }
+    impl Read for Counted {
+        fn read(&mut self, out: &mut [u8]) -> io::Result<usize> {
+            let n = self.cursor.read(out)?;
+            self.read += n as u64;
+            Ok(n)
+        }
+    }
+    impl Seek for Counted {
+        fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
+            self.cursor.seek(from)
+        }
+    }
+    // N empty DEFLATE directories whose declared compressed extents all run to the central
+    // directory, so each overlaps every later local record and the shared padding.
+    const N: u64 = 64;
+    const DIRECTORY: u64 = 64 * 1024;
+    let mut bytes = Vec::new();
+    let mut central = Vec::new();
+    for i in 0..N {
+        let offset = 46 * i;
+        let name = format!("A.rj/d{i:04}/");
+        let compressed = DIRECTORY - offset - 41;
+        let mut local = Vec::new();
+        local.extend_from_slice(b"PK\x03\x04");
+        local.extend_from_slice(&[20, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        local.extend_from_slice(&(compressed as u32).to_le_bytes());
+        local.extend_from_slice(&[0; 4]);
+        local.extend_from_slice(&11u16.to_le_bytes());
+        local.extend_from_slice(&[0; 2]);
+        local.extend_from_slice(name.as_bytes());
+        local.extend_from_slice(b"\x01\x00\x00\xff\xff");
+        assert_eq!(local.len(), 46);
+        bytes.extend_from_slice(&local);
+        central.extend_from_slice(b"PK\x01\x02");
+        central.extend_from_slice(&[20, 0, 20, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        central.extend_from_slice(&(compressed as u32).to_le_bytes());
+        central.extend_from_slice(&[0; 4]);
+        central.extend_from_slice(&11u16.to_le_bytes());
+        central.extend_from_slice(&[0; 12]);
+        central.extend_from_slice(&(offset as u32).to_le_bytes());
+        central.extend_from_slice(name.as_bytes());
+    }
+    bytes.resize(DIRECTORY as usize, 0);
+    bytes.extend_from_slice(&central);
+    bytes.extend_from_slice(b"PK\x05\x06\x00\x00\x00\x00");
+    bytes.extend_from_slice(&(N as u16).to_le_bytes());
+    bytes.extend_from_slice(&(N as u16).to_le_bytes());
+    bytes.extend_from_slice(&(central.len() as u32).to_le_bytes());
+    bytes.extend_from_slice(&(DIRECTORY as u32).to_le_bytes());
+    bytes.extend_from_slice(&[0; 2]);
+    let length = bytes.len() as u64;
+    let staging = std::env::temp_dir().join(format!("rjdj-overlap-{}", std::process::id()));
+    let _ = fs::remove_dir_all(&staging);
+    fs::create_dir(&staging).unwrap();
+    let mut spool = Counted {
+        cursor: io::Cursor::new(bytes),
+        read: 0,
+    };
+    extract(&mut spool, &staging).unwrap();
+    assert!(staging.join("A.rj/d0063").is_dir());
+    fs::remove_dir_all(&staging).unwrap();
+    // Without per-record bounds the drop-drain reads ~N/2 x the spool (about 2 MiB here).
+    assert!(spool.read <= 3 * length, "read {} bytes of a {length}-byte spool", spool.read);
 }
