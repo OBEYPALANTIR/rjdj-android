@@ -155,7 +155,7 @@ abstract class GenerateNoticesTask extends DefaultTask {
         def metadataBytes = new ByteArrayOutputStream()
         execOperations.exec {
             workingDir new File(root, 'rust/rjdj-core')
-            commandLine 'cargo', 'metadata', '--locked', '--offline',
+            commandLine 'cargo', 'metadata', '--locked',
                     '--filter-platform', 'aarch64-linux-android', '--format-version', '1'
             environment 'PATH', cargoPath
             standardOutput = metadataBytes

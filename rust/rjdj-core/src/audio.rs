@@ -1387,6 +1387,27 @@ mod tests {
     }
 
     #[test]
+    fn saturated_session_rejects_record_stop_before_waiting_for_drain() {
+        let _operation = OPERATION.lock().unwrap_or_else(|error| error.into_inner());
+        let (queue, _consumer) = CommandQueue::new();
+        for _ in 0..256 {
+            assert!(queue.push(Command::MicVolume(1.0)));
+        }
+        let queue = Arc::new(queue);
+        let (tx, _events) = mpsc::channel();
+        let shared = Arc::new(Shared::new(tx));
+        shared.state.store(State::Restarting as i32, Ordering::Release);
+        let previous = CURRENT
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .replace((shared, Arc::clone(&queue)));
+        let delivered = send(Command::Record(false));
+        *CURRENT.lock().unwrap_or_else(|error| error.into_inner()) = previous;
+        assert!(!delivered);
+        assert_eq!(queue.dropped(), 1);
+    }
+
+    #[test]
     fn terminal_failure_quiesces_then_clears_before_publishing() {
         let current = Mutex::new(Some(()));
         let quiesced = Cell::new(false);

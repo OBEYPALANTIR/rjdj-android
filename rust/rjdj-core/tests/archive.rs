@@ -241,6 +241,91 @@ fn java_max_entries_plus_one_is_rejected_and_staging_cleaned() {
     );
 }
 #[test]
+fn classic_declared_entry_count_is_rejected_before_zip_metadata_parsing() {
+    for field in [8, 10] {
+        let mut bytes = [0; 22];
+        bytes[..4].copy_from_slice(b"PK\x05\x06");
+        bytes[field..field + 2].copy_from_slice(&((MAX_ENTRIES + 1) as u16).to_le_bytes());
+        // No central directory: ZipArchive::new cannot parse this footer-only archive.
+        assert!(zip::ZipArchive::new(Cursor::new(bytes)).is_err());
+        rejected(&bytes, "Archive contains too many entries");
+    }
+}
+#[test]
+fn zip64_declared_entry_count_is_rejected_before_zip_metadata_parsing() {
+    for classic_count in [0, u16::MAX] {
+        let mut bytes = [0; 98];
+        bytes[..4].copy_from_slice(b"PK\x06\x06");
+        bytes[4..12].copy_from_slice(&44u64.to_le_bytes());
+        bytes[32..40].copy_from_slice(&((MAX_ENTRIES + 1) as u64).to_le_bytes());
+        bytes[56..60].copy_from_slice(b"PK\x06\x07");
+        bytes[72..76].copy_from_slice(&1u32.to_le_bytes());
+        bytes[76..80].copy_from_slice(b"PK\x05\x06");
+        bytes[84..86].copy_from_slice(&classic_count.to_le_bytes());
+        bytes[86..88].copy_from_slice(&classic_count.to_le_bytes());
+        bytes[88..92].copy_from_slice(&u32::MAX.to_le_bytes());
+        // ZIP64's declared entries have no central records, so zip would reject this.
+        assert!(zip::ZipArchive::new(Cursor::new(bytes)).is_err());
+        rejected(&bytes, "Archive contains too many entries");
+    }
+}
+#[test]
+fn earlier_over_limit_footer_cannot_hide_behind_trailing_junk_or_a_later_footer() {
+    for magic in [b"PK\x05\x06", b"PK\x06\x06"] {
+        let mut bytes = vec![0; 8190];
+        let position = bytes.len();
+        bytes.extend_from_slice(magic);
+        if magic == b"PK\x05\x06" {
+            bytes.resize(position + 22, 0);
+            bytes[position + 10..position + 12]
+                .copy_from_slice(&((MAX_ENTRIES + 1) as u16).to_le_bytes());
+        } else {
+            bytes.resize(position + 76, 0);
+            bytes[position + 4..position + 12].copy_from_slice(&44u64.to_le_bytes());
+            bytes[position + 32..position + 40]
+                .copy_from_slice(&((MAX_ENTRIES + 1) as u64).to_le_bytes());
+            bytes[position + 56..position + 60].copy_from_slice(b"PK\x06\x07");
+        }
+        bytes.resize(bytes.len() + 65536, 0);
+        let mut later = [0; 22];
+        later[..4].copy_from_slice(b"PK\x05\x06");
+        bytes.extend_from_slice(&later);
+        rejected(&bytes, "Archive contains too many entries");
+    }
+}
+#[test]
+fn small_zip64_scene_with_classic_sentinels_is_accepted() {
+    for (prefix, extension) in [(0, 0), (100, 256), (8190, 65536)] {
+        let work = Work::new();
+        let mut bytes = valid();
+        let mut classic = bytes.split_off(bytes.len() - 22);
+        let record_position = bytes.len() as u64;
+        let mut record = [0; 56];
+        record[..4].copy_from_slice(b"PK\x06\x06");
+        record[4..12].copy_from_slice(&(44u64 + extension).to_le_bytes());
+        record[12..14].copy_from_slice(&45u16.to_le_bytes());
+        record[14..16].copy_from_slice(&45u16.to_le_bytes());
+        record[24..32].copy_from_slice(&2u64.to_le_bytes());
+        record[32..40].copy_from_slice(&2u64.to_le_bytes());
+        record[40..44].copy_from_slice(&classic[12..16]);
+        record[48..52].copy_from_slice(&classic[16..20]);
+        bytes.extend_from_slice(&record);
+        bytes.resize(bytes.len() + extension as usize, 0);
+        let mut locator = [0; 20];
+        locator[..4].copy_from_slice(b"PK\x06\x07");
+        locator[8..16].copy_from_slice(&record_position.to_le_bytes());
+        locator[16..20].copy_from_slice(&1u32.to_le_bytes());
+        bytes.extend_from_slice(&locator);
+        classic[8..20].fill(0xff);
+        bytes.extend_from_slice(&classic);
+        bytes.splice(..0, vec![0; prefix]);
+        assert_eq!(
+            import_scene(bytes.as_slice(), &work.root()).unwrap(),
+            work.root().join("Test.rj")
+        );
+    }
+}
+#[test]
 fn java_max_entries_is_accepted() {
     let work = Work::new();
     let mut zip = ZipWriter::new(Cursor::new(Vec::new()));

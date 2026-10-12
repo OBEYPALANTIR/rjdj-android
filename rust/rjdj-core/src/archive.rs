@@ -99,6 +99,7 @@ fn stage(root: &Path) -> Result<PathBuf> {
 }
 
 fn extract(spool: &mut File, staging: &Path) -> Result<()> {
+    preflight_entry_count(spool)?;
     spool.seek(SeekFrom::Start(0))?;
     let zip = ZipArchive::new(spool.try_clone()?).map_err(|_| CoreError::new(ONE_SCENE))?;
     check_central_entries(spool, zip.central_directory_start())?;
@@ -185,6 +186,75 @@ fn validate_name(name: &str) -> Result<()> {
         || name.split('/').any(|p| p == "." || p == "..")
     {
         return Err(CoreError::new("Invalid archive path"));
+    }
+    Ok(())
+}
+
+fn preflight_entry_count(spool: &mut File) -> Result<()> {
+    // zip retries earlier footers, so scan the raw-capped spool with constant-size storage.
+    let length = spool.seek(SeekFrom::End(0))?;
+    let mut buffer = [0; 8192];
+    let mut start = 0;
+    while start < length {
+        let size = (length - start).min(buffer.len() as u64) as usize;
+        spool.seek(SeekFrom::Start(start))?;
+        spool.read_exact(&mut buffer[..size])?;
+        for (offset, magic) in buffer[..size].windows(4).enumerate() {
+            let position = start + offset as u64;
+            let count = if magic == b"PK\x05\x06" && length - position >= 22 {
+                let mut header = [0; 18];
+                spool.seek(SeekFrom::Start(position + 4))?;
+                spool.read_exact(&mut header)?;
+                let comment = u16::from_le_bytes([header[16], header[17]]) as u64;
+                if comment > length - position - 22 {
+                    continue;
+                }
+                let on_disk = u16::from_le_bytes([header[4], header[5]]);
+                let total = u16::from_le_bytes([header[6], header[7]]);
+                let may_be_zip64 = total == u16::MAX
+                    || header[8..12] == [0xff; 4]
+                    || header[12..16] == [0xff; 4];
+                if may_be_zip64 && position >= 20 {
+                    let mut locator = [0; 4];
+                    spool.seek(SeekFrom::Start(position - 20))?;
+                    spool.read_exact(&mut locator)?;
+                    if locator == *b"PK\x06\x07" {
+                        // ZIP64 counts, not the classic sentinel fields, control allocation.
+                        continue;
+                    }
+                }
+                u64::from(total.max(on_disk))
+            } else if magic == b"PK\x06\x06" && length - position >= 76 {
+                let mut record_size = [0; 8];
+                spool.seek(SeekFrom::Start(position + 4))?;
+                spool.read_exact(&mut record_size)?;
+                let record_size = u64::from_le_bytes(record_size);
+                if record_size < 44 || record_size > length - position - 32 {
+                    continue;
+                }
+                let mut locator = [0; 4];
+                spool.seek(SeekFrom::Start(position + 12 + record_size))?;
+                spool.read_exact(&mut locator)?;
+                if locator != *b"PK\x06\x07" {
+                    continue;
+                }
+                let mut on_disk = [0; 8];
+                let mut total = [0; 8];
+                spool.seek(SeekFrom::Start(position + 24))?;
+                spool.read_exact(&mut on_disk)?;
+                spool.read_exact(&mut total)?;
+                u64::from_le_bytes(total).max(u64::from_le_bytes(on_disk))
+            } else {
+                continue;
+            };
+            if count > MAX_ENTRIES as u64 {
+                return Err(CoreError::new("Archive contains too many entries"));
+            }
+        }
+        if start + size as u64 == length {
+            break;
+        }
+        start += (size - 3) as u64; // Preserve signatures spanning adjacent scan buffers.
     }
     Ok(())
 }

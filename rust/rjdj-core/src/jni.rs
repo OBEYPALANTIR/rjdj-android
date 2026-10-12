@@ -70,7 +70,7 @@ const NATIVE_METHODS: &[(&JNIStr, &JNIStr, *mut c_void)] = &[
     (jni_str!("sendTouch"), jni_str!("(IIFF)V"), send_touch as *mut c_void),
     (jni_str!("sendAccelerate"), jni_str!("(FFF)V"), send_accelerate as *mut c_void),
     (jni_str!("sendMicVolume"), jni_str!("(F)V"), send_mic_volume as *mut c_void),
-    (jni_str!("sendRecord"), jni_str!("(Ljava/lang/String;Z)V"), send_record as *mut c_void),
+    (jni_str!("sendRecord"), jni_str!("(Ljava/lang/String;Z)Z"), send_record as *mut c_void),
     (jni_str!("audioInfo"), jni_str!("()[J"), audio_info as *mut c_void),
     (jni_str!("setListener"), jni_str!("(Lorg/puredata/android/scenes/RjdjCore$Listener;)V"), set_listener as *mut c_void),
 ];
@@ -431,7 +431,24 @@ extern "system" fn prepare_playback(
     io_native(&mut unowned, ptr::null_mut(), |env| {
         let scene = path(env, &scene_dir)?;
         let cache = path(env, &cache_dir)?;
-        return_path(env, &playback::prepare(&scene, &cache)?)
+        let thread = checked(
+            env.call_static_method(
+                jni_str!("java/lang/Thread"),
+                jni_str!("currentThread"),
+                jni_sig!("()Ljava/lang/Thread;"),
+                &[],
+            )
+            .and_then(|value| value.l()),
+            env,
+        )?.auto();
+        let copy = playback::prepare(&scene, &cache, &mut || {
+            checked(
+                env.call_method(&thread, jni_str!("isInterrupted"), jni_sig!("()Z"), &[])
+                    .and_then(|value| value.z()),
+                env,
+            )
+        })?;
+        return_path(env, &copy)
     })
 }
 
@@ -562,22 +579,29 @@ fn record_scene(path: &str) -> CoreResult<Command> {
     Ok(Command::RecordScene(path))
 }
 
+fn send_record_commands(path: Option<&str>, mut send: impl FnMut(Command) -> bool) -> CoreResult<bool> {
+    if let Some(path) = path {
+        if !send(record_scene(path)?) {
+            return Ok(false);
+        }
+    }
+    Ok(send(Command::Record(path.is_some())))
+}
+
 extern "system" fn send_record(
     mut unowned: EnvUnowned<'_>,
     _class: JClass<'_>,
     wav_path: JString<'_>,
     start: jboolean,
-) {
-    audio_native(&mut unowned, (), |env| {
-        if start {
-            let path = string(env, &wav_path)?;
-            if !audio::send(record_scene(&path)?) {
-                return Ok(());
-            }
-        }
-        audio::send(Command::Record(start));
-        Ok(())
-    });
+) -> jboolean {
+    audio_native(&mut unowned, false, |env| {
+        let path = if start {
+            Some(string(env, &wav_path)?)
+        } else {
+            None
+        };
+        send_record_commands(path.as_deref(), audio::send)
+    })
 }
 
 extern "system" fn audio_info(mut unowned: EnvUnowned<'_>, _class: JClass<'_>) -> jlongArray {
@@ -738,6 +762,22 @@ mod tests {
             Command::RecordScene(path) => assert_eq!(path.as_str(), "/private/音.wav"),
             _ => panic!("Wrong recording command"),
         }
+    }
+
+    #[test]
+    fn saturated_record_stop_reports_failure_without_delivering_stop() {
+        let (queue, mut consumer) = crate::pd::engine::CommandQueue::new();
+        for _ in 0..256 {
+            assert!(queue.push(Command::MicVolume(1.0)));
+        }
+        assert!(!send_record_commands(None, |command| queue.push(command)).unwrap());
+        assert_eq!(queue.dropped(), 1);
+        for _ in 0..256 {
+            assert!(matches!(consumer.pop(), Ok(Command::MicVolume(1.0))));
+        }
+        assert!(consumer.pop().is_err());
+        assert!(send_record_commands(None, |command| queue.push(command)).unwrap());
+        assert!(matches!(consumer.pop(), Ok(Command::Record(false))));
     }
 
     fn dirs(files: &str, cache: &str, libraries: &str) -> Paths {

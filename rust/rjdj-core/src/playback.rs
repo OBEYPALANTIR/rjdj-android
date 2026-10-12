@@ -33,7 +33,11 @@ pub fn contained_file(root: &Path, rel: &str) -> Result<PathBuf> {
 
 /// Make a process-owned copy; bridge names are omitted before inspecting or counting
 /// those entries, exactly as in ScenePlayback.java. Failed copies are always released.
-pub fn prepare(source_scene: &Path, cache: &Path) -> Result<PathBuf> {
+pub fn prepare(
+    source_scene: &Path,
+    cache: &Path,
+    cancelled: &mut dyn FnMut() -> Result<bool>,
+) -> Result<PathBuf> {
     if !source_scene.is_dir() {
         return Err(CoreError::new("Scene is missing"));
     }
@@ -68,7 +72,7 @@ pub fn prepare(source_scene: &Path, cache: &Path) -> Result<PathBuf> {
     };
     let result = (|| {
         let source = canonical_path(source_scene)?;
-        copy_tree(&source, &copy, 0, &mut 0, &mut 0)?;
+        copy_tree(&source, &copy, 0, &mut 0, &mut 0, cancelled)?;
         if !copy.join("_main.pd").is_file() {
             return Err(CoreError::new("Scene has no _main.pd"));
         }
@@ -89,7 +93,11 @@ fn copy_tree(
     depth: usize,
     entries: &mut usize,
     bytes: &mut u64,
+    cancelled: &mut dyn FnMut() -> Result<bool>,
 ) -> Result<()> {
+    if cancelled()? {
+        return Err(CoreError::new("Playback preparation cancelled"));
+    }
     *entries += 1;
     let metadata = fs::symlink_metadata(source)?;
     if depth > 64 || *entries > 10000 || metadata.file_type().is_symlink() {
@@ -104,7 +112,14 @@ fn copy_tree(
             if BRIDGES.iter().any(|bridge| name == *bridge) {
                 continue;
             }
-            copy_tree(&child.path(), &target.join(name), depth + 1, entries, bytes)?;
+            copy_tree(
+                &child.path(),
+                &target.join(name),
+                depth + 1,
+                entries,
+                bytes,
+                cancelled,
+            )?;
         }
     } else {
         *bytes = bytes.saturating_add(metadata.len());

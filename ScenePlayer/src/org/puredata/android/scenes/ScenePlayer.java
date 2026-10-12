@@ -495,7 +495,13 @@ public class ScenePlayer extends Activity implements SensorEventListener, OnTouc
 
 	private void stopRecording() {
 		if (recFile == null) return;
-		RjdjCore.sendRecord(recFile, false);
+        if (!RjdjCore.sendRecord(recFile, false)) {
+            record.setChecked(true);
+            String message = "Unable to stop recording: " + statusName(RjdjCore.INTERNAL);
+            Log.e(TAG, message);
+            toast(message);
+            return;
+        }
 		long duration = System.currentTimeMillis() - recStart;
         long recordingId = -1;
         try {

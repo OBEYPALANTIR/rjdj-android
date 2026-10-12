@@ -90,7 +90,7 @@ final class RjdjCore {
   static native void sendTouch(int kind, int pointerId1Based, float x, float y); // kind: 0 down, 1 xy, 2 up
   static native void sendAccelerate(float x, float y, float z);
   static native void sendMicVolume(float gain);
-  static native void sendRecord(String wavPath, boolean start);  // start: "#transport scene <path>" then "#transport record 1"; stop: "#transport record 0"
+  static native boolean sendRecord(String wavPath, boolean start);  // false = delivery failed; retain recording ownership on failed stop; start: "#transport scene <path>" then "#transport record 1"; stop: "#transport record 0"
   static native long[] audioInfo();   // [streamRate, pdRate(22050), framesPerBurst, outputXruns, inputXruns, outputLatencyMicros, state]
   static native void setListener(Listener l);   // one listener; replaced atomically
   interface Listener {

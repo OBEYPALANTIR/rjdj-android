@@ -659,7 +659,7 @@ fn scene_worker(
     mode: &str,
 ) -> Result<()> {
     let scratch = TempDir::new()?;
-    let copy = playback::prepare(source, &scratch.0)?;
+    let copy = playback::prepare(source, &scratch.0, &mut || Ok(false))?;
     let paths = playback::search_paths(&copy, bridges, ext);
     let mut session = Session::new(&paths, false)?;
     let opened = session.open(&copy, "_main.pd");
@@ -1395,7 +1395,7 @@ fn run(out: &Path) -> Result<()> {
         let image_sequence = name != "Atsuke"
             || fs::read_to_string(out.join(format!("{name}.overlay-contract")))? == "true";
         let (mut passed, contract) = scene_contract(&name, &windows, &total, &tail, image_sequence);
-        let copy = playback::prepare(scene, &scratch.0.join("playback"))?;
+        let copy = playback::prepare(scene, &scratch.0.join("playback"), &mut || Ok(false))?;
         let reachable = reachable(&copy, &bridges)?;
         let reachable_text = reachable
             .iter()

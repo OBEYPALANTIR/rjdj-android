@@ -48,7 +48,7 @@ final class RjdjCore {
     static native void sendTouch(int kind, int pointerId1Based, float x, float y);
     static native void sendAccelerate(float x, float y, float z);
     static native void sendMicVolume(float gain);
-    static native void sendRecord(String wavPath, boolean start);
+    static native boolean sendRecord(String wavPath, boolean start);
     static native long[] audioInfo();
     static native void setListener(Listener listener);
 

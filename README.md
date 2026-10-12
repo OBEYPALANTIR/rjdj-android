@@ -18,13 +18,11 @@ There is no network permission, account, scene marketplace or location capture. 
 
 ## Build and check
 
-Requirements: JDK 21, Android SDK platform 37.0, Build Tools 37.0.0, NDK 29.0.14206865, Rust stable with the `aarch64-linux-android` target, and cargo-ndk 4.1.2. Gradle 9.8.1 is supplied by the wrapper; AGP 9.1.1 supports API 37. Minimum install API is 28; the APK is arm64-only and primary acceptance is Android 17.
+Requirements: JDK 21, Android SDK platform 37.0, Build Tools 37.0.0, NDK 29.0.14206865, rustup (the repo's `rust-toolchain.toml` pins Rust 1.96.1 with the `aarch64-linux-android` target; `generateNotices` rejects any other rustc), and cargo-ndk 4.1.2. Gradle 9.8.1 is supplied by the wrapper; AGP 9.1.1 supports API 37. Minimum install API is 28; the APK is arm64-only and primary acceptance is Android 17.
 
 ```sh
 git submodule update --init --recursive
 sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;29.0.14206865'
-rustup default stable
-rustup target add aarch64-linux-android
 cargo install cargo-ndk --version 4.1.2 --locked
 ./gradlew :ScenePlayer:checkSceneFiles :ScenePlayer:assembleDebug :ScenePlayer:assembleDebugAndroidTest :ScenePlayer:lintDebug --max-workers=2
 adb -s YOUR_SERIAL install -r ScenePlayer/build/outputs/apk/debug/ScenePlayer-debug.apk

@@ -77,7 +77,7 @@ fn java_playback_check_preserves_sources_live_copies_and_unrelated_cache() {
     let unrelated = cache.join("unrelated");
     fs::create_dir(&unrelated).unwrap();
 
-    let copy = prepare(&source, &cache).unwrap();
+    let copy = prepare(&source, &cache, &mut || Ok(false)).unwrap();
     assert!(!abandoned.exists());
     assert!(unrelated.is_dir());
     assert!(copy.starts_with(&cache));
@@ -95,7 +95,7 @@ fn java_playback_check_preserves_sources_live_copies_and_unrelated_cache() {
             0o700
         );
     }
-    let second = prepare(&source, &cache).unwrap();
+    let second = prepare(&source, &cache, &mut || Ok(false)).unwrap();
     assert_ne!(copy, second);
     assert!(copy.join("_main.pd").is_file());
     assert!(second.join("_main.pd").is_file());
@@ -137,7 +137,7 @@ fn java_playback_check_preserves_sources_live_copies_and_unrelated_cache() {
     {
         std::os::unix::fs::symlink(&root.0, source.join("escape")).unwrap();
         assert_eq!(
-            prepare(&source, &cache).unwrap_err().message,
+            prepare(&source, &cache, &mut || Ok(false)).unwrap_err().message,
             "Scene exceeds limits or contains links"
         );
         assert_eq!(
@@ -154,7 +154,7 @@ fn java_playback_check_preserves_sources_live_copies_and_unrelated_cache() {
         fs::create_dir(&deep).unwrap();
     }
     assert_eq!(
-        prepare(&source, &cache).unwrap_err().message,
+        prepare(&source, &cache, &mut || Ok(false)).unwrap_err().message,
         "Scene exceeds limits or contains links"
     );
     assert_eq!(cache_entries(&cache), 3);
@@ -163,6 +163,38 @@ fn java_playback_check_preserves_sources_live_copies_and_unrelated_cache() {
     assert!(second.join("_main.pd").is_file());
     release(&second);
     assert_eq!(cache_entries(&cache), 1);
+}
+
+#[test]
+fn cancellation_stops_after_first_node_and_releases_failed_copy() {
+    let root = TempDir::new();
+    let source = root.scene();
+    for n in 0..8 {
+        fs::write(source.join(format!("asset-{n}")), [n]).unwrap();
+    }
+    let cache = root.0.join("cache");
+    let mut probes = 0;
+    let mut cancelled_copy = None;
+    let error = prepare(&source, &cache, &mut || {
+        probes += 1;
+        if probes == 2 {
+            let copy = fs::read_dir(&cache).unwrap().next().unwrap().unwrap().path();
+            assert_eq!(cache_entries(&copy), 0, "no child has been copied yet");
+            cancelled_copy = Some(copy);
+        }
+        Ok(probes > 1)
+    })
+    .unwrap_err();
+    assert_eq!(error.message, "Playback preparation cancelled");
+    assert_eq!(probes, 2, "no further entries may be visited");
+    assert_eq!(cache_entries(&cache), 0, "partial copy must be removed");
+    // Recreating its path proves failure removed process ownership, not just its files.
+    let cancelled_copy = cancelled_copy.unwrap();
+    fs::create_dir(&cancelled_copy).unwrap();
+    let copy = prepare(&source, &cache, &mut || Ok(false)).unwrap();
+    assert!(!cancelled_copy.exists(), "failed copy must now be reclaimable");
+    assert_eq!(cache_entries(&copy), 9);
+    release(&copy);
 }
 
 #[test]
@@ -178,7 +210,7 @@ fn depth_64_is_allowed_and_omitted_bridges_are_not_visited() {
     let skipped = deep.join("rj_image.pd");
     fs::create_dir(&skipped).unwrap();
     fs::write(skipped.join("otherwise-too-deep"), [1]).unwrap();
-    let copy = prepare(&source, &root.0.join("cache")).unwrap();
+    let copy = prepare(&source, &root.0.join("cache"), &mut || Ok(false)).unwrap();
     assert!(copy.join(deep.strip_prefix(&source).unwrap()).is_dir());
     assert!(!copy.join(skipped.strip_prefix(&source).unwrap()).exists());
     release(&copy);
@@ -192,12 +224,12 @@ fn counts_root_and_copied_entries_toward_the_10000_entry_limit() {
         File::create(source.join(format!("asset-{n}"))).unwrap();
     }
     let cache = root.0.join("cache");
-    let copy = prepare(&source, &cache).unwrap();
+    let copy = prepare(&source, &cache, &mut || Ok(false)).unwrap();
     assert_eq!(fs::read_dir(&copy).unwrap().count(), 9999);
     release(&copy);
     File::create(source.join("one-too-many")).unwrap();
     assert_eq!(
-        prepare(&source, &cache).unwrap_err().message,
+        prepare(&source, &cache, &mut || Ok(false)).unwrap_err().message,
         "Scene exceeds limits or contains links"
     );
     assert_eq!(cache_entries(&cache), 0);
@@ -212,7 +244,7 @@ fn refuses_over_256_mib_without_leaking_or_changing_source() {
     File::create(&big).unwrap().set_len(length).unwrap();
     let cache = root.0.join("cache");
     assert_eq!(
-        prepare(&source, &cache).unwrap_err().message,
+        prepare(&source, &cache, &mut || Ok(false)).unwrap_err().message,
         "Scene exceeds limits"
     );
     assert_eq!(fs::metadata(&big).unwrap().len(), length);
@@ -224,26 +256,28 @@ fn missing_scene_and_main_have_java_messages_and_failed_copies_are_removed() {
     let root = TempDir::new();
     let cache = root.0.join("cache");
     assert_eq!(
-        prepare(&root.0.join("absent"), &cache).unwrap_err().message,
+        prepare(&root.0.join("absent"), &cache, &mut || Ok(false))
+            .unwrap_err()
+            .message,
         "Scene is missing"
     );
     let source = root.scene();
     fs::remove_file(source.join("_main.pd")).unwrap();
     assert_eq!(
-        prepare(&source, &cache).unwrap_err().message,
+        prepare(&source, &cache, &mut || Ok(false)).unwrap_err().message,
         "Scene has no _main.pd"
     );
     assert_eq!(cache_entries(&cache), 0);
     fs::create_dir(source.join("_main.pd")).unwrap();
     assert_eq!(
-        prepare(&source, &cache).unwrap_err().message,
+        prepare(&source, &cache, &mut || Ok(false)).unwrap_err().message,
         "Scene has no _main.pd"
     );
     assert_eq!(cache_entries(&cache), 0);
     let file = root.0.join("not-a-directory");
     fs::write(&file, [1]).unwrap();
     assert_eq!(
-        prepare(&file, &cache).unwrap_err().message,
+        prepare(&file, &cache, &mut || Ok(false)).unwrap_err().message,
         "Scene is missing"
     );
 }
@@ -262,18 +296,18 @@ fn refuses_file_directory_and_dangling_symlinks_but_retains_java_hardlink_behavi
     ] {
         symlink(&target, source.join("link")).unwrap();
         assert_eq!(
-            prepare(&source, &cache).unwrap_err().message,
+            prepare(&source, &cache, &mut || Ok(false)).unwrap_err().message,
             "Scene exceeds limits or contains links"
         );
         assert_eq!(cache_entries(&cache), 0);
         fs::remove_file(source.join("link")).unwrap();
     }
     fs::hard_link(source.join("_main.pd"), source.join("hard-link")).unwrap();
-    let copy = prepare(&source, &cache).unwrap();
+    let copy = prepare(&source, &cache, &mut || Ok(false)).unwrap();
     assert_eq!(fs::read(copy.join("hard-link")).unwrap(), [1, 2]);
     release(&copy);
     symlink(&source, root.0.join("source-alias")).unwrap();
-    let copy = prepare(&root.0.join("source-alias"), &cache).unwrap();
+    let copy = prepare(&root.0.join("source-alias"), &cache, &mut || Ok(false)).unwrap();
     assert!(copy.join("_main.pd").is_file());
     release(&copy);
 }
@@ -308,7 +342,7 @@ fn reclaim_removes_only_abandoned_prefixed_entries_and_release_is_idempotent() {
     let root = TempDir::new();
     let source = root.scene();
     let cache = root.0.join("cache");
-    let live = prepare(&source, &cache).unwrap();
+    let live = prepare(&source, &cache, &mut || Ok(false)).unwrap();
     let stale = cache.join("playback-stale");
     fs::create_dir_all(stale.join("partial")).unwrap();
     let unrelated = cache.join("unrelated");
