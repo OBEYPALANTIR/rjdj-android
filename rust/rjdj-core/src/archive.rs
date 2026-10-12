@@ -108,10 +108,15 @@ fn extract(spool: &mut (impl Read + Seek), staging: &Path) -> Result<()> {
     let mut total = 0u64;
     let mut buffer = [0u8; 8192];
     for (index, &(offset, compressed, crc)) in entries.iter().enumerate() {
-        spool.seek(SeekFrom::Start(offset))?;
         // zip's streaming reader drains the declared compressed extent on drop; bound each
         // record to the span before the next one so overlapping extents cannot re-read the spool.
-        let span = entries.get(index + 1).map_or(length, |next| next.0) - offset;
+        // Entries are sorted, so only an offset past the spool (a ZIP64 field) can underflow.
+        let span = entries
+            .get(index + 1)
+            .map_or(length, |next| next.0)
+            .checked_sub(offset)
+            .ok_or_else(|| CoreError::new(ONE_SCENE))?;
+        spool.seek(SeekFrom::Start(offset))?;
         let mut record = spool.by_ref().take(span);
         // Read names from the local header, as Java ZipInputStream does, not the central directory.
         let options = ZipReadOptions::new()
@@ -640,4 +645,47 @@ fn overlapping_compressed_spans_are_read_at_most_once() {
     fs::remove_dir_all(&staging).unwrap();
     // Without per-record bounds the drop-drain reads ~N/2 x the spool (about 2 MiB here).
     assert!(spool.read <= 3 * length, "read {} bytes of a {length}-byte spool", spool.read);
+}
+
+#[cfg(test)]
+#[test]
+fn local_offset_past_the_spool_is_rejected_without_panicking() {
+    // One stored empty directory whose central header moves the local offset into a ZIP64
+    // extra field pointing 1 KiB past the end of the archive.
+    let name = b"A.rj/";
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(b"PK\x03\x04");
+    bytes.extend_from_slice(&[20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    bytes.extend_from_slice(&(name.len() as u16).to_le_bytes());
+    bytes.extend_from_slice(&[0; 2]);
+    bytes.extend_from_slice(name);
+    let directory = bytes.len() as u32;
+    let mut central = Vec::new();
+    central.extend_from_slice(b"PK\x01\x02");
+    central.extend_from_slice(&[20, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    central.extend_from_slice(&(name.len() as u16).to_le_bytes());
+    central.extend_from_slice(&12u16.to_le_bytes());
+    central.extend_from_slice(&[0; 10]); // comment, disk, internal and external attributes
+    central.extend_from_slice(&[0xff; 4]);
+    central.extend_from_slice(name);
+    central.extend_from_slice(&[1, 0, 8, 0]);
+    let past_end = u64::from(directory) + 46 + 12 + name.len() as u64 + 22 + 1024;
+    central.extend_from_slice(&past_end.to_le_bytes());
+    bytes.extend_from_slice(&central);
+    bytes.extend_from_slice(b"PK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00");
+    bytes.extend_from_slice(&(central.len() as u32).to_le_bytes());
+    bytes.extend_from_slice(&directory.to_le_bytes());
+    bytes.extend_from_slice(&[0; 2]);
+    let length = bytes.len() as u64;
+    assert!(past_end > length);
+    assert_eq!(
+        find_central_directory(&mut io::Cursor::new(bytes.clone())).unwrap(),
+        vec![(past_end, 0, 0)]
+    );
+    let staging = std::env::temp_dir().join(format!("rjdj-past-end-{}", std::process::id()));
+    let _ = fs::remove_dir_all(&staging);
+    fs::create_dir(&staging).unwrap();
+    let error = extract(&mut io::Cursor::new(bytes), &staging).unwrap_err();
+    fs::remove_dir_all(&staging).unwrap();
+    assert_eq!(error.message, ONE_SCENE);
 }
