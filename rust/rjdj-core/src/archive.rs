@@ -237,40 +237,11 @@ fn central_directory_at(
     let total = u16::from_le_bytes([header[10], header[11]]);
     let may_be_zip64 =
         total == u16::MAX || header[12..16] == [0xff; 4] || header[16..20] == [0xff; 4];
-    if may_be_zip64 && position >= 20 {
-        let locator_position = position - 20;
-        let mut locator = [0; 20];
-        spool.seek(SeekFrom::Start(locator_position)).ok()?;
-        spool.read_exact(&mut locator).ok()?;
-        if locator[..4] == *b"PK\x06\x07" {
-            let record_position = u64::from_le_bytes(locator[8..16].try_into().ok()?);
-            let disks = u32::from_le_bytes(locator[16..20].try_into().ok()?);
-            if disks > 1 || locator_position.checked_sub(record_position)? < 56 {
-                return None;
-            }
-            let mut record = [0; 56];
-            spool.seek(SeekFrom::Start(record_position)).ok()?;
-            spool.read_exact(&mut record).ok()?;
-            let record_size = u64::from_le_bytes(record[4..12].try_into().ok()?);
-            // Check the actual locator boundary without reading the extensible data sector.
-            if record[..4] != *b"PK\x06\x06"
-                || record_size < 44
-                || record_size.checked_add(12)? != locator_position - record_position
-                || record[16..20] != record[20..24]
-                || record[20..24] != locator[4..8]
-            {
-                return None;
-            }
-            let on_disk = u64::from_le_bytes(record[24..32].try_into().ok()?);
-            let total = u64::from_le_bytes(record[32..40].try_into().ok()?);
-            let directory = u64::from_le_bytes(record[48..56].try_into().ok()?);
-            if on_disk != total
-                || record_position < directory.saturating_add(total.saturating_mul(46))
-            {
-                return None;
-            }
-            return Some((directory, total, record_position));
-        }
+    if let Some(directory) = zip64_directory_at(spool, position) {
+        return Some(directory);
+    }
+    if may_be_zip64 {
+        return None;
     }
     let directory = u32::from_le_bytes(header[16..20].try_into().ok()?) as u64;
     if header[4..6] != header[6..8] || directory >= position {
@@ -280,6 +251,44 @@ fn central_directory_at(
     spool.seek(SeekFrom::Start(directory)).ok()?;
     spool.read_exact(&mut magic).ok()?;
     (magic == *b"PK\x01\x02").then_some((directory, u64::from(total.max(on_disk)), position))
+}
+
+fn zip64_directory_at(
+    spool: &mut (impl Read + Seek),
+    position: u64,
+) -> Option<(u64, u64, u64)> {
+    let locator_position = position.checked_sub(20)?;
+    let mut locator = [0; 20];
+    spool.seek(SeekFrom::Start(locator_position)).ok()?;
+    spool.read_exact(&mut locator).ok()?;
+    if locator[..4] != *b"PK\x06\x07" {
+        return None;
+    }
+    let record_position = u64::from_le_bytes(locator[8..16].try_into().ok()?);
+    let disks = u32::from_le_bytes(locator[16..20].try_into().ok()?);
+    if disks > 1 || locator_position.checked_sub(record_position)? < 56 {
+        return None;
+    }
+    let mut record = [0; 56];
+    spool.seek(SeekFrom::Start(record_position)).ok()?;
+    spool.read_exact(&mut record).ok()?;
+    let record_size = u64::from_le_bytes(record[4..12].try_into().ok()?);
+    // Check the actual locator boundary without reading the extensible data sector.
+    if record[..4] != *b"PK\x06\x06"
+        || record_size < 44
+        || record_size.checked_add(12)? != locator_position - record_position
+        || record[16..20] != record[20..24]
+        || record[20..24] != locator[4..8]
+    {
+        return None;
+    }
+    let on_disk = u64::from_le_bytes(record[24..32].try_into().ok()?);
+    let total = u64::from_le_bytes(record[32..40].try_into().ok()?);
+    let directory = u64::from_le_bytes(record[48..56].try_into().ok()?);
+    if on_disk != total || record_position < directory.saturating_add(total.saturating_mul(46)) {
+        return None;
+    }
+    Some((directory, total, record_position))
 }
 
 fn check_central_entries(
@@ -301,6 +310,17 @@ fn check_central_entries(
             return Ok(None);
         }
         if magic != *b"PK\x01\x02" {
+            if magic == *b"PK\x05\x05" {
+                if end.saturating_sub(position) < 6 {
+                    return Ok(None);
+                }
+                let mut length = [0; 2];
+                if spool.read_exact(&mut length).is_err() {
+                    return Ok(None);
+                }
+                // Signature bytes are opaque; only their single-record boundary matters.
+                position += 6 + u64::from(u16::from_le_bytes(length));
+            }
             if position != end || entries.len() as u64 != declared_count {
                 return Ok(None);
             }

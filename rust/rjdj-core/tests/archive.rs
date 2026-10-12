@@ -55,6 +55,48 @@ fn archive(entries: &[(&str, &[u8])]) -> Vec<u8> {
     }
     zip.finish().unwrap().into_inner()
 }
+fn append_zip64_footer(bytes: &mut Vec<u8>, classic: &[u8], extension: u64) {
+    let record_position = bytes.len() as u64;
+    let mut record = [0; 56];
+    record[..4].copy_from_slice(b"PK\x06\x06");
+    record[4..12].copy_from_slice(&(44u64 + extension).to_le_bytes());
+    record[12..14].copy_from_slice(&45u16.to_le_bytes());
+    record[14..16].copy_from_slice(&45u16.to_le_bytes());
+    let on_disk = u16::from_le_bytes(classic[8..10].try_into().unwrap());
+    let total = u16::from_le_bytes(classic[10..12].try_into().unwrap());
+    let size = u32::from_le_bytes(classic[12..16].try_into().unwrap());
+    let directory = u32::from_le_bytes(classic[16..20].try_into().unwrap());
+    record[24..32].copy_from_slice(&u64::from(on_disk).to_le_bytes());
+    record[32..40].copy_from_slice(&u64::from(total).to_le_bytes());
+    record[40..48].copy_from_slice(&u64::from(size).to_le_bytes());
+    record[48..56].copy_from_slice(&u64::from(directory).to_le_bytes());
+    bytes.extend_from_slice(&record);
+    bytes.resize(bytes.len() + extension as usize, 0);
+    let mut locator = [0; 20];
+    locator[..4].copy_from_slice(b"PK\x06\x07");
+    locator[8..16].copy_from_slice(&record_position.to_le_bytes());
+    locator[16..20].copy_from_slice(&1u32.to_le_bytes());
+    bytes.extend_from_slice(&locator);
+}
+fn directory_signed_archive(signature: &[u8], zip64: bool) -> Vec<u8> {
+    let mut bytes = archive(&[
+        ("Test.rj/_main.pd", b"patch"),
+        ("Test.rj/Info.plist", INFO.as_bytes()),
+        ("Test.rj/sample.wav", b"required sample"),
+    ]);
+    let mut classic = bytes.split_off(bytes.len() - 22);
+    let size = u32::from_le_bytes(classic[12..16].try_into().unwrap());
+    bytes.extend_from_slice(b"PK\x05\x05");
+    bytes.extend_from_slice(&u16::try_from(signature.len()).unwrap().to_le_bytes());
+    bytes.extend_from_slice(signature);
+    classic[12..16].copy_from_slice(&(size + 6 + signature.len() as u32).to_le_bytes());
+    if zip64 {
+        append_zip64_footer(&mut bytes, &classic, 0);
+        classic[8..20].fill(0xff);
+    }
+    bytes.extend_from_slice(&classic);
+    bytes
+}
 fn valid() -> Vec<u8> {
     archive(&[
         ("wrapper/Test.rj/_main.pd", b"patch"),
@@ -422,6 +464,74 @@ fn backward_footer_search_retries_invalid_candidates_across_buffer_boundaries() 
     }
 }
 #[test]
+fn directory_signatures_preserve_scene_files_before_classic_and_zip64_footers() {
+    for zip64 in [false, true] {
+        for signature in [&[][..], &b"\0\xffopaque signature"[..]] {
+            let work = Work::new();
+            let bytes = directory_signed_archive(signature, zip64);
+            let imported = import_scene(bytes.as_slice(), &work.root()).unwrap();
+            assert_eq!(fs::read(imported.join("_main.pd")).unwrap(), b"patch");
+            assert_eq!(fs::read(imported.join("Info.plist")).unwrap(), INFO.as_bytes());
+            assert_eq!(fs::read(imported.join("sample.wav")).unwrap(), b"required sample");
+        }
+    }
+}
+#[test]
+fn directory_signature_lengths_and_single_record_boundary_are_enforced() {
+    for length in [1u16, u16::MAX] {
+        let mut bytes = directory_signed_archive(b"signature", false);
+        let footer = bytes.len() - 22;
+        let signature = footer - 6 - b"signature".len();
+        bytes[signature + 4..signature + 6].copy_from_slice(&length.to_le_bytes());
+        rejected(&bytes, ONE_SCENE);
+    }
+    let mut bytes = directory_signed_archive(b"", false);
+    let footer = bytes.len() - 22;
+    let size = u32::from_le_bytes(bytes[footer + 12..footer + 16].try_into().unwrap());
+    let signature = footer - 6;
+    bytes.splice(signature..signature, b"PK\x05\x05\0\0".iter().copied());
+    let footer = footer + 6;
+    bytes[footer + 12..footer + 16].copy_from_slice(&(size + 6).to_le_bytes());
+    rejected(&bytes, ONE_SCENE);
+}
+#[test]
+fn small_zip64_scene_with_fitting_classic_fields_is_accepted() {
+    for extension in [0, 256, 65536] {
+        let work = Work::new();
+        let mut bytes = valid();
+        let classic = bytes.split_off(bytes.len() - 22);
+        append_zip64_footer(&mut bytes, &classic, extension);
+        bytes.extend_from_slice(&classic);
+        let imported = import_scene(bytes.as_slice(), &work.root()).unwrap();
+        assert_eq!(fs::read(imported.join("_main.pd")).unwrap(), b"patch");
+        assert_eq!(fs::read(imported.join("Info.plist")).unwrap(), INFO.as_bytes());
+    }
+}
+#[test]
+fn invalid_optional_zip64_locator_in_a_central_comment_keeps_classic_import() {
+    let work = Work::new();
+    let mut bytes = valid();
+    let footer = bytes.len() - 22;
+    let directory = u32::from_le_bytes(bytes[footer + 16..footer + 20].try_into().unwrap()) as usize;
+    let size = u32::from_le_bytes(bytes[footer + 12..footer + 16].try_into().unwrap());
+    let name = u16::from_le_bytes(bytes[directory + 28..directory + 30].try_into().unwrap()) as usize;
+    let extra = u16::from_le_bytes(bytes[directory + 30..directory + 32].try_into().unwrap()) as usize;
+    let comment = u16::from_le_bytes(bytes[directory + 32..directory + 34].try_into().unwrap()) as usize;
+    let last = directory + 46 + name + extra + comment;
+    let previous = u16::from_le_bytes(bytes[last + 32..last + 34].try_into().unwrap());
+    bytes[last + 32..last + 34].copy_from_slice(&(previous + 20).to_le_bytes());
+    let mut locator = [0; 20];
+    locator[..4].copy_from_slice(b"PK\x06\x07");
+    locator[16..20].copy_from_slice(&1u32.to_le_bytes());
+    // Offset zero is a local header, not a ZIP64 record; these are opaque comment bytes.
+    bytes.splice(footer..footer, locator);
+    let footer = footer + 20;
+    bytes[footer + 12..footer + 16].copy_from_slice(&(size + 20).to_le_bytes());
+    let imported = import_scene(bytes.as_slice(), &work.root()).unwrap();
+    assert_eq!(fs::read(imported.join("_main.pd")).unwrap(), b"patch");
+    assert_eq!(fs::read(imported.join("Info.plist")).unwrap(), INFO.as_bytes());
+}
+#[test]
 fn small_zip64_scene_with_classic_sentinels_and_entry_extras_is_accepted() {
     for extension in [0, 256, 65536] {
         for fields in [&[24, 20, 42][..], &[20][..], &[42][..], &[24][..]] {
@@ -455,23 +565,8 @@ fn small_zip64_scene_with_classic_sentinels_and_entry_extras_is_accepted() {
                 );
                 position += 46 + name + extra + comment;
             }
-            let record_position = bytes.len() as u64;
-            let mut record = [0; 56];
-            record[..4].copy_from_slice(b"PK\x06\x06");
-            record[4..12].copy_from_slice(&(44u64 + extension).to_le_bytes());
-            record[12..14].copy_from_slice(&45u16.to_le_bytes());
-            record[14..16].copy_from_slice(&45u16.to_le_bytes());
-            record[24..32].copy_from_slice(&2u64.to_le_bytes());
-            record[32..40].copy_from_slice(&2u64.to_le_bytes());
-            record[40..48].copy_from_slice(&(record_position - start as u64).to_le_bytes());
-            record[48..56].copy_from_slice(&(start as u64).to_le_bytes());
-            bytes.extend_from_slice(&record);
-            bytes.resize(bytes.len() + extension as usize, 0);
-            let mut locator = [0; 20];
-            locator[..4].copy_from_slice(b"PK\x06\x07");
-            locator[8..16].copy_from_slice(&record_position.to_le_bytes());
-            locator[16..20].copy_from_slice(&1u32.to_le_bytes());
-            bytes.extend_from_slice(&locator);
+            classic[12..16].copy_from_slice(&((bytes.len() - start) as u32).to_le_bytes());
+            append_zip64_footer(&mut bytes, &classic, extension);
             classic[8..20].fill(0xff);
             bytes.extend_from_slice(&classic);
             let imported = import_scene(bytes.as_slice(), &work.root()).unwrap();
