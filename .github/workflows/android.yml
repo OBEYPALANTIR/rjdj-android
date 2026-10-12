@@ -25,8 +25,8 @@ jobs:
       with:
         java-version: '21'
         distribution: 'temurin'
-    - name: Set up Rust stable
-      uses: dtolnay/rust-toolchain@stable
+    - name: Set up Rust 1.96.1 (generateNotices binds res/raw/notices_rust.txt to this rustc)
+      uses: dtolnay/rust-toolchain@1.96.1
       with:
         targets: aarch64-linux-android
     - run: |
